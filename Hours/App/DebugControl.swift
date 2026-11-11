@@ -4,7 +4,8 @@ import AppKit
 /// Debug builds only: lets scripts/hours-debug.swift open the dropdown and
 /// click areas, so agents can take screenshots without Accessibility access.
 /// Commands: open, close, area:<id>, menu (shows the right-click menu for
-/// three seconds), and for the onboarding window onboard:names:<a,b,c>,
+/// three seconds), item:<title> (what choosing that menu item does), quit,
+/// and for the onboarding window onboard:names:<a,b,c>,
 /// onboard:color:<field 0-2> (a click on that square), onboard:start, and
 /// login:toggle (what a click on Open at login in the menu does).
 /// HOURS_APPEARANCE=light or dark forces the app's appearance, for
@@ -64,7 +65,9 @@ final class DebugControl {
             }
         case "onboard:start": onboarding?.start()
         case "login:toggle": LoginItem.set(!LoginItem.isOn)
+        case "quit": NSApp.terminate(nil)
         case _ where command.hasPrefix("area:"): statusItem.areaClicked(String(command.dropFirst(5)))
+        case _ where command.hasPrefix("item:"): statusItem.performMenuItem(titled: String(command.dropFirst(5)))
         default: NSLog("Hours debug: unknown command \(command)")
         }
     }

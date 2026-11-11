@@ -3,6 +3,8 @@
 //   swift scripts/hours-debug.swift area:coding
 //   swift scripts/hours-debug.swift close
 //   swift scripts/hours-debug.swift menu   (right-click menu, closes after 3 s)
+//   swift scripts/hours-debug.swift "item:Block sites"   (choose a menu item)
+//   swift scripts/hours-debug.swift quit
 //   swift scripts/hours-debug.swift onboard:names:Coding,Writing,
 //   swift scripts/hours-debug.swift onboard:color:0   (click the first square)
 //   swift scripts/hours-debug.swift onboard:start
@@ -12,7 +14,7 @@
 import Foundation
 
 guard CommandLine.arguments.count == 2 else {
-    print("usage: swift scripts/hours-debug.swift open | close | menu | area:<id> | onboard:names:<a,b,c> | onboard:color:<0-2> | onboard:start | login:toggle")
+    print("usage: swift scripts/hours-debug.swift open | close | menu | area:<id> | item:<title> | quit | onboard:names:<a,b,c> | onboard:color:<0-2> | onboard:start | login:toggle")
     exit(2)
 }
 

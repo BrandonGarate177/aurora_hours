@@ -10,16 +10,17 @@ final class StatusItemController: NSObject {
     private let clock: Clock
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private let popover = NSPopover()
-    private let menu = MenuController(onQuit: { NSApp.terminate(nil) })
+    private let menu: MenuController
     private var hosting: NSHostingView<DropdownView>?
     /// nil follows the menu bar, like every other status item's popover.
     var popoverAppearance: NSAppearance?
     /// A left click with no areas yet reopens onboarding instead of an empty dropdown.
     var onClickWithoutAreas: (() -> Void)?
 
-    init(store: Store, clock: Clock) {
+    init(store: Store, clock: Clock, blocker: Blocker) {
         self.store = store
         self.clock = clock
+        menu = MenuController(blocker: blocker, onQuit: { NSApp.terminate(nil) })
         super.init()
 
         if let button = statusItem.button {
@@ -89,6 +90,15 @@ final class StatusItemController: NSObject {
     func cancelMenu() {
         menu.menu.cancelTracking()
     }
+
+    #if DEBUG
+    /// What choosing a menu item does, for scripts that can't click the menu.
+    func performMenuItem(titled title: String) {
+        let index = menu.menu.indexOfItem(withTitle: title)
+        guard index >= 0 else { return NSLog("Hours debug: no menu item \(title)") }
+        menu.menu.performActionForItem(at: index)
+    }
+    #endif
 
     /// What a click on an area word does: start, stop or switch, then close.
     /// Starting one also switches the map to that area.

@@ -6,6 +6,7 @@ import AppKit
 final class HoursApp: NSObject, NSApplicationDelegate {
     private var store: Store?
     private var clock: Clock?
+    private var blocker: Blocker?
     private var statusItem: StatusItemController?
     private var onboarding: OnboardingWindow?
 
@@ -25,9 +26,15 @@ final class HoursApp: NSObject, NSApplicationDelegate {
         let clock = Clock()
         clock.align(to: store.running?.start ?? Date())
 
+        // Site blocking: clears a block a crash left behind, then follows
+        // session starts and stops.
+        let blocker = Blocker(store: store)
+        blocker.follow()
+
         self.store = store
         self.clock = clock
-        let statusItem = StatusItemController(store: store, clock: clock)
+        self.blocker = blocker
+        let statusItem = StatusItemController(store: store, clock: clock, blocker: blocker)
         self.statusItem = statusItem
         statusItem.onClickWithoutAreas = { [weak self] in self?.showOnboarding() }
         #if DEBUG
@@ -53,6 +60,12 @@ final class HoursApp: NSObject, NSApplicationDelegate {
         DebugControl.shared.onboarding = onboarding
         #endif
         onboarding.show()
+    }
+
+    /// Quit unblocks. The session itself keeps running across a relaunch, and
+    /// the block comes back at launch if it still should.
+    func applicationWillTerminate(_ notification: Notification) {
+        blocker?.unblock()
     }
 
     private static var isRunningTests: Bool {
