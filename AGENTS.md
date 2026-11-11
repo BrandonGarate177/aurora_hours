@@ -26,6 +26,8 @@ swift scripts/hours-debug.swift open          # open the dropdown
 swift scripts/hours-debug.swift area:coding   # what a click on Coding does
 swift scripts/hours-debug.swift close
 swift scripts/hours-debug.swift menu          # right-click menu, closes itself after 3 s
+swift scripts/hours-debug.swift "item:Block sites"   # what choosing that menu item does
+swift scripts/hours-debug.swift quit          # quits the way the menu's Quit does
 ```
 
 A command reaches only the copy whose store matches the script's `HOURS_STORE`, spelled the same way, so copies with different stores don't hear each other. Export it once (`export HOURS_STORE=/tmp/h.json`) before launching the app and running the script. `make run` passes `HOURS_STORE` through, so `HOURS_STORE=/tmp/h.json make run` pairs with the script run the same way. It keeps its copy's pid in `build/hours.pid` and stops only that copy, never other checkouts' copies; the app's output goes to `build/hours.log`.
@@ -49,7 +51,7 @@ The design pictures (six rows: areas, Today, switcher, map, share, block, quit) 
   1. The area words on one line, `Coding  Writing  Study`. The running one is bold with its time, `Coding 0:42`. Click a word to start, again to stop, another to switch; the dropdown closes. At the right of the same row, today's total as a light `.title` numeral with monospaced digits, `2:15`. There is no separate Today row.
   2. The map, 264 x 34 pt. There is no switcher row. `MapSelection` follows the running area when a session starts, stays on the last pick when idle (All by default), and a click on the map cycles All, then each area. The cycling is already built in `MapSection.swift`; the map task only draws.
   3. `Share  1 year  No hours`.
-- The right-click menu: `Block sites` (checkmark item), `Edit blocked list`, `Open at login`, `Quit`. The first three are disabled stubs for the blocking and onboarding tasks. Quit is the only way to quit.
+- The right-click menu: `Block sites` (checkmark item), `Edit blocked list`, `Open at login`, `Quit`. `Open at login` is a disabled stub for the onboarding task. Quit is the only way to quit.
 - The popover background is Liquid Glass on macOS 26 and the `.popover` material before that. Only `Glass.swift` knows which.
 
 ## Where each feature lives
@@ -58,7 +60,7 @@ The design pictures (six rows: areas, Today, switcher, map, share, block, quit) 
 |---|---|
 | `Hours/App/HoursApp.swift` | Entry point and app delegate. Builds the store and clock, makes the status item. The seed call is here. A running session stays running across quit and relaunch. |
 | `Hours/App/StatusItemController.swift` | Menu bar title, left click (popover) versus right click (menu), what an area click does, including pointing `MapSelection` at the area that starts. `openPopover()` is what onboarding calls to show the dropdown once. |
-| `Hours/App/MenuController.swift` | The right-click menu. Site blocking fills `blockSites` and `editBlockedList`; onboarding fills `openAtLogin`. |
+| `Hours/App/MenuController.swift` | The right-click menu. `Block sites` flips `Blocker.isOn`; `Edit blocked list` opens blocked.txt in the default text editor. Onboarding fills `openAtLogin`. |
 | `Hours/App/Glass.swift` | The popover background. The `#available(macOS 26)` switch lives only here. |
 | `Hours/App/DebugControl.swift` | Debug-only command listener for scripts. |
 | `Hours/AppIcon.icon`, `Hours/Assets.xcassets/AppIcon.appiconset` | App icon. `AppIcon.icon` is the Icon Composer format: Xcode 26 builds the macOS 26 icon and the `AppIcon.icns` for macOS 14 and 15 from it. The PNG set alone would be drawn inside a gray frame on macOS 26. Both are generated; don't edit them by hand. |
@@ -68,6 +70,8 @@ The design pictures (six rows: areas, Today, switcher, map, share, block, quit) 
 | `Hours/Model/Store.swift` | Loads and saves `StoreFile` as JSON, atomically. `Store.defaultURL()` is the one place the location is decided: the widget task points it at an app group container. Start, stop and switch (`toggle`). The seed (`seedIfEmpty`, marked `SEED`) goes when onboarding lands. |
 | `Hours/Model/Totals.swift` | Daily totals with sessions split at local midnight, today's total, per-area totals over N days as `[day: seconds]`. The map and share tasks read from here. |
 | `Hours/Model/MapSelection.swift` | Which map is shown (`.all` or `.area(id)`), in UserDefaults under `mapSelection`, and `next(in:)` for the click-to-cycle order. The share task reads it to know which map to share. |
+| `Hours/Model/HostsFile.swift` | The hosts rewrite, a pure function: given the file text and the hosts, it returns the text with Hours' lines between `# hours start` and `# hours end` (127.0.0.1 and ::1, each host and its `www.` form). Lines outside the markers stay as they are. Also parses blocked.txt. |
+| `Hours/Model/Blocker.swift` | Site blocking. Blocks while a session runs and the setting (UserDefaults `blockSites`, off by default) is on; follows session starts and stops by observing `store.running`. Quit unblocks (`applicationWillTerminate`); launch removes a stale block unless its session is still running. blocked.txt sits next to the store. |
 | `Hours/Model/Clock.swift` | The minute tick. Lines up with the running session's start. Views read `clock.now`. |
 | `Hours/Model/HoursMinutes.swift` | `hoursMinutes(_:)`, the `h:mm` format used by the bar and the dropdown. |
 | `Hours/Views/DropdownView.swift` | Stacks the three rows. |
@@ -76,6 +80,12 @@ The design pictures (six rows: areas, Today, switcher, map, share, block, quit) 
 | `Hours/Views/MapSection.swift` | Row 2. STUB: 264 x 34 pt of empty space that cycles `MapSelection` on click. The map task draws in it. |
 | `Hours/Views/ShareRow.swift` | Row 3. STUB text. The share task. |
 | `HoursTests/TotalsTests.swift`, `HoursTests/StoreTests.swift` | Unit tests (`StoreTests.swift` also holds the `MapSelection` tests). Add a new file per feature rather than growing these. |
+
+## Site blocking
+
+The block lives in `/etc/hosts`, which needs admin rights. There is no privileged helper: each write (a session start, a stop, quit) runs `do shell script ... with administrator privileges`, so macOS asks for the password each time, then flushes DNS. A `SMAppService.daemon` helper would need a signed app, and the project builds unsigned.
+
+`HOURS_HOSTS=/path/hosts-test` on launch points blocking at a plain file and skips the admin prompt and the DNS flush. Use it, with `HOURS_STORE`, for every manual check; never let a dev build write the real `/etc/hosts`. Tests build `Blocker` with `.file(url)` and a throwaway UserDefaults suite. The setting itself lives in the app's real defaults (`defaults delete com.hoursapp.Hours blockSites` after a manual check).
 
 ## Store format
 
