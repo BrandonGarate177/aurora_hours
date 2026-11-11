@@ -64,8 +64,9 @@ struct MapWidgetView: View {
 
     var body: some View {
         GeometryReader { proxy in
-            // The largest whole-point square that fits the width.
-            let square = max(1, ((proxy.size.width + gap) / CGFloat(columns) - gap).rounded(.down))
+            // The largest square that fits the width, in half points so its
+            // edges land on Retina pixels.
+            let square = max(1, (((proxy.size.width + gap) / CGFloat(columns) - gap) * 2).rounded(.down) / 2)
             VStack(alignment: .leading, spacing: 0) {
                 Text("Hours")
                     .font(.caption)

@@ -2,7 +2,12 @@
 // map can be seen without a year of use. Same data every run on the same day.
 //   HOURS_STORE=/tmp/hours-seed.json make seed run
 //   swift scripts/seed.swift /tmp/hours-seed.json
-// Overwrites the file. Refuses the real store in Application Support.
+// To see it in the widget, point it at the group container store, the one
+// the widget reads:
+//   HOURS_STORE=~/Library/Group\ Containers/group.com.hoursapp.Hours/store.json make seed
+// Overwrites the file, after copying a group container store that is already
+// there to store.before-seed-<unix time>.json beside it. Refuses the old real
+// store in Application Support.
 import Foundation
 
 guard CommandLine.arguments.count == 2, !CommandLine.arguments[1].isEmpty else {
@@ -15,6 +20,19 @@ let real = FileManager.default.urls(for: .applicationSupportDirectory, in: .user
 if url.resolvingSymlinksInPath() == real.resolvingSymlinksInPath() {
     print("seed: refusing to write over the real store at \(real.path)")
     exit(1)
+}
+let group = FileManager.default.homeDirectoryForCurrentUser
+    .appendingPathComponent("Library/Group Containers/group.com.hoursapp.Hours/store.json").standardizedFileURL
+if url.resolvingSymlinksInPath() == group.resolvingSymlinksInPath(), FileManager.default.fileExists(atPath: url.path) {
+    let stamp = Int(Date().timeIntervalSince1970)
+    let backup = url.deletingLastPathComponent().appendingPathComponent("store.before-seed-\(stamp).json")
+    do {
+        try FileManager.default.copyItem(at: url, to: backup)
+    } catch {
+        print("seed: could not back up \(url.path), not writing: \(error)")
+        exit(1)
+    }
+    print("seed: copied the store that was there to \(backup.path)")
 }
 
 /// SplitMix64, so the same seed gives the same year.
