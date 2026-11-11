@@ -3,10 +3,10 @@
 //   HOURS_STORE=/tmp/hours-seed.json make seed run
 //   swift scripts/seed.swift /tmp/hours-seed.json
 // To see it in the widget, point it at the group container store, the one
-// the widget reads:
+// the widget reads (<team id>.com.hoursapp.Hours for a TEAM build):
 //   HOURS_STORE=~/Library/Group\ Containers/group.com.hoursapp.Hours/store.json make seed
-// Overwrites the file, after copying a group container store that is already
-// there to store.before-seed-<unix time>.json beside it. Refuses the old real
+// Overwrites the file. A group container store that is already there is first
+// copied to store.before-seed-<unix time>.json beside it. Refuses the old real
 // store in Application Support.
 import Foundation
 
@@ -21,9 +21,13 @@ if url.resolvingSymlinksInPath() == real.resolvingSymlinksInPath() {
     print("seed: refusing to write over the real store at \(real.path)")
     exit(1)
 }
-let group = FileManager.default.homeDirectoryForCurrentUser
-    .appendingPathComponent("Library/Group Containers/group.com.hoursapp.Hours/store.json").standardizedFileURL
-if url.resolvingSymlinksInPath() == group.resolvingSymlinksInPath(), FileManager.default.fileExists(atPath: url.path) {
+// group.com.hoursapp.Hours, or <team id>.com.hoursapp.Hours for a TEAM build.
+let groups = FileManager.default.homeDirectoryForCurrentUser
+    .appendingPathComponent("Library/Group Containers").resolvingSymlinksInPath().path
+let folder = url.resolvingSymlinksInPath().deletingLastPathComponent()
+let isGroupStore = folder.deletingLastPathComponent().path == groups
+    && folder.lastPathComponent.hasSuffix(".com.hoursapp.Hours") && url.lastPathComponent == "store.json"
+if isGroupStore, FileManager.default.fileExists(atPath: url.path) {
     let stamp = Int(Date().timeIntervalSince1970)
     let backup = url.deletingLastPathComponent().appendingPathComponent("store.before-seed-\(stamp).json")
     do {

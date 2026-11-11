@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import Security
 
 /// What goes on disk. Plain Codable with default coders (dates as seconds
 /// since 2001), so another target, like the widget, can decode it with a bare
@@ -29,7 +30,19 @@ final class Store {
 
     /// The app group both the app and the widget are entitled to. The widget
     /// is sandboxed, so the group container is the only place both can read.
-    nonisolated static let appGroup = "group.com.hoursapp.Hours"
+    /// Read from this process's own signature: group.com.hoursapp.Hours when
+    /// signed ad hoc, <team id>.com.hoursapp.Hours when built with TEAM= (see
+    /// the Makefile).
+    nonisolated static let appGroup: String = {
+        if let task = SecTaskCreateFromSelf(nil),
+           let groups = SecTaskCopyValueForEntitlement(
+               task, "com.apple.security.application-groups" as CFString, nil
+           ) as? [String],
+           let group = groups.first {
+            return group
+        }
+        return "group.com.hoursapp.Hours"
+    }()
 
     /// Where the store should live. The env var HOURS_STORE (a file path) wins,
     /// for tests and seeding; otherwise the group container. The app may still

@@ -10,4 +10,6 @@ make test    # run the unit tests
 make run     # build, then open the app (quits a running copy first)
 ```
 
-Sessions are saved to `~/Library/Application Support/Hours/store.json`. Set `HOURS_STORE=/some/file.json` to use another file.
+Sessions are saved to `~/Library/Group Containers/group.com.hoursapp.Hours/store.json`, where the desktop widget can read them. A store left in `~/Library/Application Support/Hours/` by an older build is copied there on first launch, and the old file is kept. Set `HOURS_STORE=/some/file.json` to use another file.
+
+The widget (small: 13 weeks, medium: a year, with today's total) is in the widget gallery under Hours. With the default ad hoc signing macOS won't let the widget read the store, so its map stays empty. Build with your team to fix that: `make run TEAM=<your team id>`.

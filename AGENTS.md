@@ -10,10 +10,10 @@ make test    # same, then runs HoursTests (Swift Testing)
 make run     # build, stop the copy this checkout's last make run started, start the new one
 ```
 
-- `project.yml` is the project. `Hours.xcodeproj` is generated and gitignored. Sources are folder globs (`Hours/`, `HoursTests/`), so a new file is picked up by the next `make` without touching `project.yml`.
-- No signing (`CODE_SIGN_IDENTITY=-`), no sandbox. Bundle id `com.hoursapp.Hours`, `LSUIElement` (no Dock icon).
+- `project.yml` is the project. `Hours.xcodeproj` is generated and gitignored. Sources are folder globs (`Hours/`, `Shared/`, `HoursWidget/`, `HoursTests/`), so a new file is picked up by the next `make` without touching `project.yml`.
+- Ad hoc signing by default (`CODE_SIGN_IDENTITY=-`). The app isn't sandboxed; the widget extension (`com.hoursapp.Hours.Widget`, embedded in `Contents/PlugIns`) is, as WidgetKit requires. Bundle id `com.hoursapp.Hours`, `LSUIElement` (no Dock icon). See "Widget and signing" below.
 - Tests run inside the app (`TEST_HOST`). `HoursApp` returns early from launch when it detects XCTest, so tests never touch the real store or the menu bar.
-- `HOURS_STORE=/path/store.json` points the store at another file. Use it for seeding and manual checks; never write test data into `~/Library/Application Support/Hours/`.
+- `HOURS_STORE=/path/store.json` points the store at another file. Use it for seeding and manual checks; never write test data into the real store (`~/Library/Group Containers/<group>/store.json`, or the old `~/Library/Application Support/Hours/store.json`). The widget can't see `HOURS_STORE`: it always reads the group container.
 - In `#expect`, compare against typed constants (`let hour: TimeInterval = 3600`), not `2 * 3600`: the macro splits the operands and can infer the literal as another type, so equal values fail.
 
 ## Driving the app without Accessibility (Debug builds only)
@@ -54,6 +54,16 @@ The design pictures (six rows: areas, Today, switcher, map, share, block, quit) 
 - The right-click menu: `Block sites` (checkmark item), `Edit blocked list`, `Open at login`, `Quit`. Quit is the only way to quit.
 - The popover background is Liquid Glass on macOS 26 and the `.popover` material before that. Only `Glass.swift` knows which.
 
+## Widget and signing
+
+- Files both targets build live in `Shared/` (model, `Store`, `Totals`, `MapGrid`, `MapLevels`, `MapView`, `WidgetSnapshot`). `project.yml` lists `Shared` as a source of both `Hours` and `HoursWidget`; a plain folder was simpler in XcodeGen than a framework target. Tests reach `Shared/` through `@testable import Hours`.
+- The store lives in the app group container, `~/Library/Group Containers/<group>/store.json`. `Store.appGroup` reads `<group>` from the process's own signed entitlements. On launch `StoreMigration` copies the old `~/Library/Application Support/Hours/store.json` there, checks the copy, and only then switches; the old file stays. If the container can't be written it stays on the old path.
+- Entitlements are in `Entitlements/` and go to codesign through `OTHER_CODE_SIGN_FLAGS`, not `CODE_SIGN_ENTITLEMENTS`: with the latter Xcode refuses an app group without a provisioning profile.
+- Ad hoc builds use the group `group.com.hoursapp.Hours`. The app can use that container, but macOS refuses it to the sandboxed widget ("Group containers identifiers should be prefixed by requestor's team ID", logged by `containermanagerd`), so the widget draws an empty map. `make run TEAM=<team id>` signs with that team's Apple Development identity and the group `<team id>.com.hoursapp.Hours`, which works without a provisioning profile. The two groups are separate containers with separate stores.
+- To fill the widget with sample data: `HOURS_STORE="$HOME/Library/Group Containers/<group>/store.json" make seed` (it copies an existing store aside first), then restart the app and start or stop a session so it reloads the widget. Debug script commands for a TEAM build need `HOURS_GROUP=<team id>.com.hoursapp.Hours`.
+- Every checkout builds the same bundle id. App Intents (`linkd`) and the widget's configuration follow whichever copy LaunchServices prefers, and a copy without the widget makes the widget fail with "Intent configuration is required but was not provided". Check with `NSWorkspace.shared.urlsForApplications(withBundleIdentifier:)`; `lsregister -u <other copy>` then `lsregister -f <this copy>` (in `/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/`) fixes it. After that, `killall chronod` makes the widget gallery read the new description.
+- Logs: `/usr/bin/log show --last 2m --predicate 'process == "HoursWidget" OR process == "containermanagerd"'` (in zsh, bare `log` is a builtin).
+
 ## Where each feature lives
 
 | File | Owns |
@@ -65,20 +75,26 @@ The design pictures (six rows: areas, Today, switcher, map, share, block, quit) 
 | `Hours/App/DebugControl.swift` | Debug-only command listener for scripts. |
 | `Hours/AppIcon.icon`, `Hours/Assets.xcassets/AppIcon.appiconset` | App icon. `AppIcon.icon` is the Icon Composer format: Xcode 26 builds the macOS 26 icon and the `AppIcon.icns` for macOS 14 and 15 from it. The PNG set alone would be drawn inside a gray frame on macOS 26. Both are generated; don't edit them by hand. |
 | `scripts/icon.svg`, `scripts/make-icon.sh` | Icon source and generator. Edit the SVG, then run `./scripts/make-icon.sh`; it rewrites the PNG set and the `.icon` layer. It uses `sips`, which ships with macOS and reads SVG. To check how Finder draws it: `NSWorkspace.shared.icon(forFile:)` on a fresh copy of the built app (the icon cache keys on the path). |
-| `Hours/Model/FocusArea.swift` | `id`, `name`, `colorHex` (six hex digits, no `#`). |
-| `Hours/Model/Session.swift` | `areaId`, `start`, `end` (nil while running). |
-| `Hours/Model/Store.swift` | Loads and saves `StoreFile` as JSON, atomically. `Store.defaultURL()` is the one place the location is decided: the widget task points it at an app group container. Start, stop and switch (`toggle`). The seed (`seedIfEmpty`, marked `SEED`) goes when onboarding lands. |
-| `Hours/Model/Totals.swift` | Daily totals with sessions split at local midnight, today's total, per-area totals over N days as `[day: seconds]`. The map and share tasks read from here. |
+| `Shared/FocusArea.swift` | `id`, `name`, `colorHex` (six hex digits, no `#`). |
+| `Shared/Session.swift` | `areaId`, `start`, `end` (nil while running). |
+| `Shared/Store.swift` | Loads and saves `StoreFile` as JSON, atomically. `Store.defaultURL()` (HOURS_STORE, else the group container), `groupURL()`, `legacyURL()` and `appGroup` decide the location. Start, stop and switch (`toggle`). The seed (`seedIfEmpty`, marked `SEED`) goes when onboarding lands. |
+| `Hours/Model/StoreMigration.swift` | Picks the store file for this launch and copies the old Application Support store into the group container once. |
+| `Shared/Totals.swift` | Daily totals with sessions split at local midnight, today's total, per-area totals over N days as `[day: seconds]`. The map and share tasks read from here. |
 | `Hours/Model/MapSelection.swift` | Which map is shown (`.all` or `.area(id)`), in UserDefaults under `mapSelection`, and `next(in:)` for the click-to-cycle order. The share task reads it to know which map to share. |
 | `Hours/Model/HostsFile.swift` | The hosts rewrite, a pure function: given the file text and the hosts, it returns the text with Hours' lines between `# hours start` and `# hours end` (127.0.0.1 and ::1, each host and its `www.` form). Lines outside the markers stay as they are. Also parses blocked.txt. |
 | `Hours/Model/Blocker.swift` | Site blocking. Blocks while a session runs and the setting (UserDefaults `blockSites`, off by default) is on; follows session starts and stops by observing `store.running`. Quit unblocks (`applicationWillTerminate`); launch removes a stale block unless its session is still running. blocked.txt sits next to the store. |
 | `Hours/Model/Clock.swift` | The minute tick. Lines up with the running session's start. Views read `clock.now`. |
-| `Hours/Model/HoursMinutes.swift` | `hoursMinutes(_:)`, the `h:mm` format used by the bar and the dropdown. |
+| `Shared/HoursMinutes.swift` | `hoursMinutes(_:)`, the `h:mm` format used by the bar and the dropdown. |
 | `Hours/Views/DropdownView.swift` | Stacks the three rows. |
 | `Hours/Views/Row.swift` | Shared sizes (`Layout`) and the `.row()` modifier. |
 | `Hours/Views/AreasRow.swift` | Row 1: area words and today's total. |
 | `Hours/Views/MapSection.swift` | Row 2. STUB: 264 x 34 pt of empty space that cycles `MapSelection` on click. The map task draws in it. |
 | `Hours/Views/ShareRow.swift` | Row 3. STUB text. The share task. |
+| `Shared/MapGrid.swift`, `Shared/MapLevels.swift`, `Shared/MapView.swift` | The map: where each day sits, its shade step, and the drawing. `MapView` takes a column count and square size; the widget passes its own. |
+| `Shared/WidgetSnapshot.swift` | What the widget draws (levels, color, today's total) from a `StoreFile`, the same way the dropdown works it out, and the next timeline date (top of the next hour). |
+| `HoursWidget/` | The widget extension: `HoursWidget.swift` (bundle, timeline provider, small and medium views), `MapIntent.swift` (the All or one-area setting), `Info.plist`. |
+| `Entitlements/` | App group entitlements for the app and the widget (sandbox too). The Makefile writes team-prefixed copies into `build/entitlements` for TEAM builds. |
+| `HoursTests/WidgetTests.swift` | Timeline dates, the store migration, and widget map data against the dropdown's. |
 | `HoursTests/TotalsTests.swift`, `HoursTests/StoreTests.swift` | Unit tests (`StoreTests.swift` also holds the `MapSelection` tests). Add a new file per feature rather than growing these. |
 
 ## Site blocking

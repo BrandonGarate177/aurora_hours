@@ -24,8 +24,10 @@ let store: URL
 if let path = ProcessInfo.processInfo.environment["HOURS_STORE"], !path.isEmpty {
     store = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
 } else {
+    // A TEAM build's group is <team id>.com.hoursapp.Hours: set HOURS_GROUP to it.
+    let group = ProcessInfo.processInfo.environment["HOURS_GROUP"] ?? "group.com.hoursapp.Hours"
     let home = FileManager.default.homeDirectoryForCurrentUser
-    store = home.appendingPathComponent("Library/Group Containers/group.com.hoursapp.Hours/store.json")
+    store = home.appendingPathComponent("Library/Group Containers/\(group)/store.json")
 }
 DistributedNotificationCenter.default().postNotificationName(
     Notification.Name("com.hoursapp.Hours.debug:" + store.standardizedFileURL.path),

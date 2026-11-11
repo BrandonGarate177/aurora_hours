@@ -7,19 +7,42 @@ DERIVED  := build
 APP      := $(DERIVED)/Build/Products/Debug/Hours.app
 BIN      := $(CURDIR)/$(APP)/Contents/MacOS/Hours
 PIDFILE  := $(DERIVED)/hours.pid
+
+# Signing. Ad hoc by default, with the app group group.com.hoursapp.Hours.
+# macOS won't let an ad hoc signed widget read that group's container, so the
+# widget draws an empty map. TEAM=<team id> signs with that team's Apple
+# Development identity and the group <team id>.com.hoursapp.Hours, which
+# macOS allows without a provisioning profile:
+#   make run TEAM=6K96C3FPZ4
+ifeq ($(TEAM),)
+SIGNING  := CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO
+ENTITLEMENTS :=
+else
+SIGNING  := CODE_SIGN_IDENTITY="Apple Development" DEVELOPMENT_TEAM=$(TEAM) \
+            HOURS_ENTITLEMENTS=$(CURDIR)/$(DERIVED)/entitlements
+ENTITLEMENTS := entitlements
+endif
+
 XCB      := xcodebuild -project $(PROJECT) -scheme $(SCHEME) -configuration Debug \
             -derivedDataPath $(DERIVED) -destination 'platform=macOS,arch=$(shell uname -m)' \
-            CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO
+            $(SIGNING)
 
-.PHONY: project build test run seed clean
+.PHONY: project entitlements build test run seed clean
 
 project:
 	xcodegen generate --quiet
 
-build: project
+# Team-prefixed copies of Entitlements/, for TEAM builds.
+entitlements:
+	@mkdir -p $(DERIVED)/entitlements
+	@for f in Entitlements/*.entitlements; do \
+		sed 's/group\.com\.hoursapp\.Hours/$(TEAM).com.hoursapp.Hours/' $$f > $(DERIVED)/entitlements/$$(basename $$f); \
+	done
+
+build: project $(ENTITLEMENTS)
 	$(XCB) build -quiet
 
-test: project
+test: project $(ENTITLEMENTS)
 	$(XCB) test -quiet
 
 # Stops only the copy this checkout's last `make run` started (its pid is in

@@ -13,6 +13,10 @@ settings:
     DEVELOPMENT_TEAM: ""
     ENABLE_HARDENED_RUNTIME: NO
     CODE_SIGN_INJECT_BASE_ENTITLEMENTS: NO
+    # Entitlements go straight to codesign: through CODE_SIGN_ENTITLEMENTS,
+    # Xcode refuses an app group without a provisioning profile. The Makefile
+    # points this at team-prefixed copies when TEAM is set.
+    HOURS_ENTITLEMENTS: $(SRCROOT)/Entitlements
     MARKETING_VERSION: "0.1"
     CURRENT_PROJECT_VERSION: "1"
 targets:
@@ -27,7 +31,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.hoursapp.Hours
-        OTHER_CODE_SIGN_FLAGS: --entitlements $(SRCROOT)/Hours/Hours.entitlements
+        OTHER_CODE_SIGN_FLAGS: --entitlements $(HOURS_ENTITLEMENTS)/Hours.entitlements
         PRODUCT_NAME: Hours
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_LSUIElement: YES
@@ -49,7 +53,7 @@ targets:
         INFOPLIST_FILE: HoursWidget/Info.plist
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: Hours
-        OTHER_CODE_SIGN_FLAGS: --entitlements $(SRCROOT)/HoursWidget/HoursWidget.entitlements
+        OTHER_CODE_SIGN_FLAGS: --entitlements $(HOURS_ENTITLEMENTS)/HoursWidget.entitlements
         SKIP_INSTALL: YES
   HoursTests:
     type: bundle.unit-test
