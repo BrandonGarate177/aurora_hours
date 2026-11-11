@@ -13,7 +13,7 @@ PIDFILE  := $(DERIVED)/hours.pid
 # widget draws an empty map. TEAM=<team id> signs with that team's Apple
 # Development identity and the group <team id>.com.hoursapp.Hours, which
 # macOS allows without a provisioning profile:
-#   make run TEAM=6K96C3FPZ4
+#   make run TEAM=<your team id>
 ifeq ($(TEAM),)
 SIGNING  := CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO
 ENTITLEMENTS :=
