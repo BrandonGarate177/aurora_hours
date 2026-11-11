@@ -38,7 +38,8 @@ struct OnboardingView: View {
             }
         }
         .padding(.horizontal, 20)
-        .padding(.vertical, 16)
+        .padding(.top, 17)
+        .padding(.bottom, 16)
         // Monochrome: the switch and the default button follow the text color.
         .tint(.primary)
         .frame(width: 320)

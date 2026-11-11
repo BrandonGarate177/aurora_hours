@@ -19,8 +19,10 @@ final class OnboardingWindow {
         let window = self.window ?? makeWindow()
         self.window = window
         window.center()
-        // No Dock icon, so the app has to come forward on its own.
-        NSApp.activate()
+        // No Dock icon, so the app has to come forward on its own. The plain
+        // activate() is cooperative and leaves the window behind whatever app
+        // is in front; this is the one moment the app should take focus.
+        NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
     }
 

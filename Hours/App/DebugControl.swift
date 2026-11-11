@@ -5,7 +5,8 @@ import AppKit
 /// click areas, so agents can take screenshots without Accessibility access.
 /// Commands: open, close, area:<id>, menu (shows the right-click menu for
 /// three seconds), and for the onboarding window onboard:names:<a,b,c>,
-/// onboard:color:<field 0-2> (a click on that square) and onboard:start. HOURS_APPEARANCE=light or dark forces
+/// onboard:color:<field 0-2> (a click on that square), onboard:start, and
+/// login:toggle (what a click on Open at login in the menu does). HOURS_APPEARANCE=light or dark forces
 /// the app's appearance, for screenshots of the mode the Mac isn't in.
 @MainActor
 final class DebugControl {
@@ -24,10 +25,14 @@ final class DebugControl {
 
     func listen(statusItem: StatusItemController) {
         self.statusItem = statusItem
-        switch ProcessInfo.processInfo.environment["HOURS_APPEARANCE"] {
-        case "light": statusItem.popoverAppearance = NSAppearance(named: .aqua)
-        case "dark": statusItem.popoverAppearance = NSAppearance(named: .darkAqua)
-        default: break
+        let forced: NSAppearance? = switch ProcessInfo.processInfo.environment["HOURS_APPEARANCE"] {
+        case "light": NSAppearance(named: .aqua)
+        case "dark": NSAppearance(named: .darkAqua)
+        default: nil
+        }
+        if let forced {
+            statusItem.popoverAppearance = forced
+            NSApp.appearance = forced // the onboarding window
         }
         DistributedNotificationCenter.default().addObserver(
             self, selector: #selector(received(_:)), name: Self.channel(for: Store.defaultURL()), object: nil,
@@ -57,6 +62,7 @@ final class DebugControl {
                 onboarding?.form.cycleColor(field)
             }
         case "onboard:start": onboarding?.start()
+        case "login:toggle": LoginItem.set(!LoginItem.isOn)
         case _ where command.hasPrefix("area:"): statusItem.areaClicked(String(command.dropFirst(5)))
         default: NSLog("Hours debug: unknown command \(command)")
         }
