@@ -4,7 +4,8 @@ import AppKit
 /// Debug builds only: lets scripts/hours-debug.swift open the dropdown and
 /// click areas, so agents can take screenshots without Accessibility access.
 /// Commands: open, close, area:<id>, menu (shows the right-click menu for
-/// three seconds). HOURS_APPEARANCE=light or dark forces
+/// three seconds), and for the onboarding window onboard:names:<a,b,c>,
+/// onboard:color:<field 0-2> (a click on that square) and onboard:start. HOURS_APPEARANCE=light or dark forces
 /// the app's appearance, for screenshots of the mode the Mac isn't in.
 @MainActor
 final class DebugControl {
@@ -19,6 +20,7 @@ final class DebugControl {
     }
 
     private weak var statusItem: StatusItemController?
+    weak var onboarding: OnboardingWindow?
 
     func listen(statusItem: StatusItemController) {
         self.statusItem = statusItem
@@ -45,6 +47,16 @@ final class DebugControl {
             }
             RunLoop.main.add(timer, forMode: .common)
             statusItem.showMenu()
+        case _ where command.hasPrefix("onboard:names:"):
+            let names = command.dropFirst("onboard:names:".count).split(separator: ",", omittingEmptySubsequences: false)
+            for (field, name) in names.prefix(3).enumerated() {
+                onboarding?.form.names[field] = String(name)
+            }
+        case _ where command.hasPrefix("onboard:color:"):
+            if let field = Int(command.dropFirst("onboard:color:".count)), (0..<3).contains(field) {
+                onboarding?.form.cycleColor(field)
+            }
+        case "onboard:start": onboarding?.start()
         case _ where command.hasPrefix("area:"): statusItem.areaClicked(String(command.dropFirst(5)))
         default: NSLog("Hours debug: unknown command \(command)")
         }

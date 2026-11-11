@@ -14,6 +14,8 @@ final class StatusItemController: NSObject {
     private var hosting: NSHostingView<DropdownView>?
     /// nil follows the menu bar, like every other status item's popover.
     var popoverAppearance: NSAppearance?
+    /// A left click with no areas yet reopens onboarding instead of an empty dropdown.
+    var onClickWithoutAreas: (() -> Void)?
 
     init(store: Store, clock: Clock) {
         self.store = store
@@ -54,6 +56,8 @@ final class StatusItemController: NSObject {
             showMenu()
         } else if popover.isShown {
             closePopover()
+        } else if store.areas.isEmpty, let onClickWithoutAreas {
+            onClickWithoutAreas()
         } else {
             openPopover()
         }

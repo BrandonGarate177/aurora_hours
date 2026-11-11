@@ -3,12 +3,15 @@
 //   swift scripts/hours-debug.swift area:coding
 //   swift scripts/hours-debug.swift close
 //   swift scripts/hours-debug.swift menu   (right-click menu, closes after 3 s)
+//   swift scripts/hours-debug.swift onboard:names:Coding,Writing,
+//   swift scripts/hours-debug.swift onboard:color:0   (click the first square)
+//   swift scripts/hours-debug.swift onboard:start
 // The command reaches only the copy whose store is this shell's HOURS_STORE
 // (the default store when unset), so set it the same way as for the app.
 import Foundation
 
 guard CommandLine.arguments.count == 2 else {
-    print("usage: swift scripts/hours-debug.swift open | close | menu | area:<id>")
+    print("usage: swift scripts/hours-debug.swift open | close | menu | area:<id> | onboard:names:<a,b,c> | onboard:color:<0-2> | onboard:start")
     exit(2)
 }
 
