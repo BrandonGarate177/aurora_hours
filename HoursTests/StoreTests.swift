@@ -4,6 +4,11 @@ import Testing
 
 @MainActor
 @Suite struct StoreTests {
+    static let areas = [
+        FocusArea(id: "coding", name: "Coding", colorHex: "2da44e"),
+        FocusArea(id: "writing", name: "Writing", colorHex: "0969da"),
+        FocusArea(id: "study", name: "Study", colorHex: "bc4c00"),
+    ]
     let dir: URL
     let url: URL
 
@@ -21,7 +26,7 @@ import Testing
 
     @Test func roundTripKeepsAreasAndSessions() {
         let store = Store(url: url)
-        store.seedIfEmpty()
+        store.setAreas(StoreTests.areas)
         let t0 = Date(timeIntervalSinceReferenceDate: 800_000_000.25)
         store.toggle("coding", now: t0)
         store.toggle("writing", now: t0.addingTimeInterval(600))
@@ -49,7 +54,7 @@ import Testing
 
     @Test func fileDecodesWithABareJSONDecoder() throws {
         let store = Store(url: url)
-        store.seedIfEmpty()
+        store.setAreas(StoreTests.areas)
         store.toggle("coding", now: Date())
         let file = try JSONDecoder().decode(StoreFile.self, from: Data(contentsOf: url))
         #expect(file == store.file)
@@ -57,7 +62,7 @@ import Testing
 
     @Test func saveReplacesTheFileByRenameAndLeavesNoTempFiles() throws {
         let store = Store(url: url)
-        store.seedIfEmpty()
+        store.setAreas(StoreTests.areas)
         let before = try FileManager.default.attributesOfItem(atPath: url.path)[.systemFileNumber] as? Int
         store.toggle("coding", now: Date())
         let after = try FileManager.default.attributesOfItem(atPath: url.path)[.systemFileNumber] as? Int

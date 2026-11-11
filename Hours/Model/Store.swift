@@ -110,15 +110,4 @@ final class Store {
     func area(id: String) -> FocusArea? {
         areas.first { $0.id == id }
     }
-
-    // SEED: three starter areas so the app runs before onboarding exists.
-    // The onboarding task removes this function and its call in HoursApp.swift.
-    func seedIfEmpty() {
-        guard areas.isEmpty else { return }
-        setAreas([
-            FocusArea(id: "coding", name: "Coding", colorHex: "2da44e"),
-            FocusArea(id: "writing", name: "Writing", colorHex: "0969da"),
-            FocusArea(id: "study", name: "Study", colorHex: "bc4c00"),
-        ])
-    }
 }

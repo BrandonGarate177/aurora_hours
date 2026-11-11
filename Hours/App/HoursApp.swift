@@ -21,7 +21,6 @@ final class HoursApp: NSObject, NSApplicationDelegate {
         if HoursApp.isRunningTests { return }
 
         let store = Store()
-        store.seedIfEmpty() // SEED: the onboarding task removes this call.
         let clock = Clock()
         clock.align(to: store.running?.start ?? Date())
 
