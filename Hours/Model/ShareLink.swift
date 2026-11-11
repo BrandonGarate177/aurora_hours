@@ -46,6 +46,9 @@ enum ShareLink {
     /// site; change it to that site's address then.
     static let base = "https://OWNER.github.io/hours/"
 
+    /// UserDefaults key for the No hours / With hours setting.
+    static let withHoursKey = "shareWithHours"
+
     static let alphabet = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_")
 
     /// A day's seconds in quarter-hours, rounded to the nearest one and capped

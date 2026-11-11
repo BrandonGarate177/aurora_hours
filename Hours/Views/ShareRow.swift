@@ -11,11 +11,9 @@ struct ShareRow: View {
 
     @AppStorage(MapSelection.defaultsKey) private var selection: MapSelection = .all
     @AppStorage(SharePeriod.defaultsKey) private var period: SharePeriod = .year
-    @AppStorage(ShareRow.withHoursKey) private var withHours = false
+    @AppStorage(ShareLink.withHoursKey) private var withHours = false
     @State private var copied = false
     @State private var reset: Task<Void, Never>?
-
-    static let withHoursKey = "shareWithHours"
 
     var body: some View {
         HStack(spacing: 14) {
