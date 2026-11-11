@@ -2,6 +2,8 @@
 
 A macOS menu bar app for clocking deep-focus hours. The menu bar reads `Hours`. Click it, click an area like `Coding`, and the bar reads `Coding 0:00` and counts up once a minute. Click the area again to stop. Right-click the menu bar item for Quit, and for Block sites: while a session runs it blocks the sites in `~/Library/Application Support/Hours/blocked.txt` through `/etc/hosts`, asking for your password when it blocks and unblocks.
 
+Right-click, then Pomodoro, to work in intervals: pick `25 / 5`, `50 / 10` or `90 / 15` (work minutes / break minutes, every 4th break three times as long). The bar counts the interval down, and the break covers every screen until it ends or you press Skip or Esc. On a call (camera or mic in use) the break stays in the menu bar instead. Break time is never counted as focus.
+
 Needs macOS 14 or later. Building needs Xcode 26 and XcodeGen (`brew install xcodegen`).
 
 ```sh
