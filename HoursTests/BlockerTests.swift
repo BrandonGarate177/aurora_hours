@@ -23,7 +23,10 @@ import Testing
         defaults = try #require(UserDefaults(suiteName: "HoursBlockerTests"))
         defaults.removePersistentDomain(forName: "HoursBlockerTests")
         store = Store(url: dir.appendingPathComponent("store.json"))
-        store.seedIfEmpty()
+        store.setAreas([
+            FocusArea(id: "coding", name: "Coding", colorHex: "2da44e"),
+            FocusArea(id: "writing", name: "Writing", colorHex: "0969da"),
+        ])
         blocker = Blocker(
             store: store,
             listURL: dir.appendingPathComponent("blocked.txt"),

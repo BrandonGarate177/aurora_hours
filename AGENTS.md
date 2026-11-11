@@ -51,7 +51,7 @@ The design pictures (six rows: areas, Today, switcher, map, share, block, quit) 
   1. The area words on one line, `Coding  Writing  Study`. The running one is bold with its time, `Coding 0:42`. Click a word to start, again to stop, another to switch; the dropdown closes. At the right of the same row, today's total as a light `.title` numeral with monospaced digits, `2:15`. There is no separate Today row.
   2. The map, 264 x 34 pt. There is no switcher row. `MapSelection` follows the running area when a session starts, stays on the last pick when idle (All by default), and a click on the map cycles All, then each area. The cycling is already built in `MapSection.swift`; the map task only draws.
   3. `Share  1 year  No hours`.
-- The right-click menu: `Block sites` (checkmark item), `Edit blocked list`, `Open at login`, `Quit`. `Open at login` is a disabled stub for the onboarding task. Quit is the only way to quit.
+- The right-click menu: `Block sites` (checkmark item), `Edit blocked list`, `Open at login`, `Quit`. Quit is the only way to quit.
 - The popover background is Liquid Glass on macOS 26 and the `.popover` material before that. Only `Glass.swift` knows which.
 
 ## Where each feature lives
@@ -60,7 +60,7 @@ The design pictures (six rows: areas, Today, switcher, map, share, block, quit) 
 |---|---|
 | `Hours/App/HoursApp.swift` | Entry point and app delegate. Builds the store and clock, makes the status item. The seed call is here. A running session stays running across quit and relaunch. |
 | `Hours/App/StatusItemController.swift` | Menu bar title, left click (popover) versus right click (menu), what an area click does, including pointing `MapSelection` at the area that starts. `openPopover()` is what onboarding calls to show the dropdown once. |
-| `Hours/App/MenuController.swift` | The right-click menu. `Block sites` flips `Blocker.isOn`; `Edit blocked list` opens blocked.txt in the default text editor. Onboarding fills `openAtLogin`. |
+| `Hours/App/MenuController.swift` | The right-click menu. `Block sites` flips `Blocker.isOn`; `Edit blocked list` opens blocked.txt in the default text editor; `Open at login` flips `LoginItem`. |
 | `Hours/App/Glass.swift` | The popover background. The `#available(macOS 26)` switch lives only here. |
 | `Hours/App/DebugControl.swift` | Debug-only command listener for scripts. |
 | `Hours/AppIcon.icon`, `Hours/Assets.xcassets/AppIcon.appiconset` | App icon. `AppIcon.icon` is the Icon Composer format: Xcode 26 builds the macOS 26 icon and the `AppIcon.icns` for macOS 14 and 15 from it. The PNG set alone would be drawn inside a gray frame on macOS 26. Both are generated; don't edit them by hand. |
