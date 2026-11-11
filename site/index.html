@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hours</title>
+<style>
+:root{color-scheme:light dark;--fg:#000;--bg:#fff;--dim:rgba(60,60,67,.6);--empty:rgba(0,0,0,.07)}
+@media (prefers-color-scheme:dark){:root{--fg:#fff;--bg:#000;--dim:rgba(235,235,245,.6);--empty:rgba(255,255,255,.1)}}
+body{margin:0;padding:48px 16px;background:var(--bg);color:var(--fg);font:15px/20px -apple-system,system-ui,sans-serif}
+main{max-width:739px;margin:0 auto}
+h1{font:inherit;margin:0 0 16px}
+svg{display:block;max-width:100%;height:auto;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+rect{fill:var(--empty)}
+.c{fill:var(--c)}
+#t{margin:16px 0 0}
+#n{display:block;font-size:34px;line-height:41px;font-weight:300;font-variant-numeric:tabular-nums}
+#t span{color:var(--dim)}
+#p{position:absolute;padding:4px 8px;border-radius:6px;background:var(--fg);color:var(--bg);font-size:13px;line-height:18px;white-space:pre;pointer-events:none;transform:translate(-50%,-100%)}
+</style>
+<main><h1>Hours</h1><svg id="m"></svg><p id="t" hidden><b id="n"></b><span>hours</span></p></main>
+<div id="p" hidden></div>
+<script>
+// Link format: see README.md. #1.<hex color|all>.<last day YYYYMMDD>.<0|1 hours>.<one base64url char per day, oldest first>
+addEventListener("hashchange", () => location.reload());
+const B = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+const [v, color, end, hrs, days] = location.hash.slice(1).split(".");
+if (v === "1" && /^([0-9a-f]{6}|all)$/i.test(color) && /^\d{8}$/.test(end) && /^[01]$/.test(hrs) && /^[\w-]+$/.test(days)) {
+  const H = hrs === "1", vals = [...days].map(c => B.indexOf(c)), n = vals.length;
+  // Step from quarter-hours (with hours) or the step itself (without)
+  const step = q => !H ? Math.min(q, 4) : !q ? 0 : q < 4 ? 1 : q < 8 ? 2 : q < 16 ? 3 : 4;
+  const OP = [0, .3, .55, .8, 1], S = 14, W = 53;
+  const day = i => new Date(+end.slice(0, 4), end.slice(4, 6) - 1, end.slice(6) - (n - 1 - i));
+  // Sunday is row 0; past 53 weeks, one 53-week strip per row, the newest strip ending at the last day
+  const off = day(0).getDay(), cols = Math.ceil((n + off) / 7), strips = Math.ceil(cols / W), pad = strips * W - cols;
+  const m = document.getElementById("m"), p = document.getElementById("p");
+  let out = "";
+  vals.forEach((q, i) => {
+    const l = step(q), g = Math.floor((i + off) / 7) + (strips > 1 ? pad : 0);
+    out += `<rect data-i="${i}" x="${g % W * S}" y="${(Math.floor(g / W) * 8 + (i + off) % 7) * S}" width="11" height="11" rx="2"${l ? ` class="c" fill-opacity="${OP[l]}"` : ""}/>`;
+  });
+  const w = (strips > 1 ? W : cols) * S - 3, h = (strips * 8 - 1) * S - 3;
+  m.setAttribute("viewBox", `0 0 ${w} ${h}`);
+  m.setAttribute("width", w);
+  m.setAttribute("height", h);
+  m.style.setProperty("--c", color === "all" ? "var(--fg)" : "#" + color);
+  m.innerHTML = out;
+  if (H) {
+    document.getElementById("n").textContent = Math.round(vals.reduce((a, b) => a + b, 0) / 4).toLocaleString("en-US");
+    document.getElementById("t").hidden = false;
+    const show = e => {
+      const i = e.target.dataset?.i;
+      if (i == null) return p.hidden = true;
+      const r = e.target.getBoundingClientRect();
+      p.textContent = day(+i).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }).replace(",", "") + "  " + vals[i] / 4 + " h";
+      p.hidden = false;
+      const half = p.offsetWidth / 2, vw = document.documentElement.clientWidth;
+      p.style.left = Math.min(Math.max(r.left + r.width / 2, half + 4), vw - half - 4) + scrollX + "px";
+      p.style.top = r.top + scrollY - 6 + "px";
+    };
+    m.onpointerover = show;
+    m.onpointerleave = e => e.pointerType == "mouse" && (p.hidden = true);
+    document.onpointerdown = show;
+  }
+}
+</script>
