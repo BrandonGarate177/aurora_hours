@@ -76,7 +76,7 @@ final class BreakWindow {
         let window = KeyableWindow(contentRect: screen.frame, styleMask: [.borderless], backing: .buffered, defer: false)
         window.level = .screenSaver
         window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
-        window.backgroundColor = .textBackgroundColor
+        window.backgroundColor = .breakBackground
         window.isOpaque = true
         window.hasShadow = false
         window.isReleasedWhenClosed = false
@@ -84,6 +84,14 @@ final class BreakWindow {
         window.setFrame(screen.frame, display: false)
         window.orderFrontRegardless()
         return window
+    }
+}
+
+extension NSColor {
+    /// White in light mode, black in dark. The text background color would be
+    /// a dark gray in dark mode.
+    static let breakBackground = NSColor(name: "breakBackground") { appearance in
+        appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? .black : .white
     }
 }
 
@@ -112,6 +120,6 @@ struct BreakView: View {
                 .foregroundStyle(.primary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(nsColor: .textBackgroundColor))
+        .background(Color(nsColor: .breakBackground))
     }
 }
