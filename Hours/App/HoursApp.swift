@@ -22,7 +22,7 @@ final class HoursApp: NSObject, NSApplicationDelegate {
         // Unit tests load inside this app; they bring their own store.
         if HoursApp.isRunningTests { return }
 
-        let store = Store()
+        let store = Store(url: StoreMigration.storeURL())
         let clock = Clock()
         clock.align(to: store.running?.start ?? Date())
 

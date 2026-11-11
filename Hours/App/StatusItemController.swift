@@ -1,6 +1,7 @@
 import AppKit
 import Observation
 import SwiftUI
+import WidgetKit
 
 /// The menu bar item, its popover and its right-click menu. Idle reads
 /// "Hours"; running reads the area and time, "Coding 0:42".
@@ -101,9 +102,11 @@ final class StatusItemController: NSObject {
     #endif
 
     /// What a click on an area word does: start, stop or switch, then close.
-    /// Starting one also switches the map to that area.
+    /// Starting one also switches the map to that area, and the widget redraws
+    /// so its total is right within the minute.
     func areaClicked(_ id: String) {
         store.toggle(id, now: Date())
+        WidgetCenter.shared.reloadAllTimelines()
         if let running = store.running {
             MapSelection.area(running.areaId).save()
         }

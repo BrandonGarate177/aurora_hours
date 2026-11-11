@@ -86,7 +86,8 @@ import Testing
         let custom = Store.defaultURL(environment: ["HOURS_STORE": "/tmp/x/hours.json"])
         #expect(custom.path == "/tmp/x/hours.json")
         let standard = Store.defaultURL(environment: [:])
-        #expect(standard.path.hasSuffix("Library/Application Support/Hours/store.json"))
+        #expect(standard.path.hasSuffix("Library/Group Containers/group.com.hoursapp.Hours/store.json"))
+        #expect(Store.legacyURL().path.hasSuffix("Library/Application Support/Hours/store.json"))
     }
 
     @Test func mapSelectionPersists() throws {

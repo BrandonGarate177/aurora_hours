@@ -24,8 +24,8 @@ let store: URL
 if let path = ProcessInfo.processInfo.environment["HOURS_STORE"], !path.isEmpty {
     store = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
 } else {
-    let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-    store = support.appendingPathComponent("Hours", isDirectory: true).appendingPathComponent("store.json")
+    let home = FileManager.default.homeDirectoryForCurrentUser
+    store = home.appendingPathComponent("Library/Group Containers/group.com.hoursapp.Hours/store.json")
 }
 DistributedNotificationCenter.default().postNotificationName(
     Notification.Name("com.hoursapp.Hours.debug:" + store.standardizedFileURL.path),

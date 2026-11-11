@@ -3,7 +3,7 @@ import Observation
 
 /// What goes on disk. Plain Codable with default coders (dates as seconds
 /// since 2001), so another target, like the widget, can decode it with a bare
-/// JSONDecoder.
+/// JSONDecoder. Lives in Shared/, built into both the app and the widget.
 struct StoreFile: Codable, Equatable, Sendable {
     var version = 1
     var areas: [FocusArea] = []
@@ -27,12 +27,29 @@ final class Store {
 
     // MARK: Location
 
-    /// Where the store lives. The env var HOURS_STORE (a file path) wins, for
-    /// tests and seeding. The widget task points this at an app group container.
+    /// The app group both the app and the widget are entitled to. The widget
+    /// is sandboxed, so the group container is the only place both can read.
+    nonisolated static let appGroup = "group.com.hoursapp.Hours"
+
+    /// Where the store should live. The env var HOURS_STORE (a file path) wins,
+    /// for tests and seeding; otherwise the group container. The app may still
+    /// run from `legacyURL()` for a launch (see StoreMigration).
     nonisolated static func defaultURL(environment: [String: String] = ProcessInfo.processInfo.environment) -> URL {
         if let path = environment["HOURS_STORE"], !path.isEmpty {
             return URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
         }
+        return groupURL() ?? legacyURL()
+    }
+
+    /// `store.json` in the group container, or nil when macOS gives this
+    /// process no container for the group (not entitled to it).
+    nonisolated static func groupURL() -> URL? {
+        FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroup)?
+            .appendingPathComponent("store.json")
+    }
+
+    /// Where builds before the widget kept the store.
+    nonisolated static func legacyURL() -> URL {
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         return support.appendingPathComponent("Hours", isDirectory: true).appendingPathComponent("store.json")
     }

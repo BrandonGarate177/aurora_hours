@@ -12,6 +12,7 @@ settings:
     CODE_SIGN_STYLE: Manual
     DEVELOPMENT_TEAM: ""
     ENABLE_HARDENED_RUNTIME: NO
+    CODE_SIGN_INJECT_BASE_ENTITLEMENTS: NO
     MARKETING_VERSION: "0.1"
     CURRENT_PROJECT_VERSION: "1"
 targets:
@@ -20,9 +21,13 @@ targets:
     platform: macOS
     sources:
       - path: Hours
+      - path: Shared
+    dependencies:
+      - target: HoursWidget
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.hoursapp.Hours
+        OTHER_CODE_SIGN_FLAGS: --entitlements $(SRCROOT)/Hours/Hours.entitlements
         PRODUCT_NAME: Hours
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_LSUIElement: YES
@@ -31,6 +36,21 @@ targets:
         INFOPLIST_KEY_NSHumanReadableCopyright: ""
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ENABLE_APP_SANDBOX: NO
+  HoursWidget:
+    type: app-extension
+    platform: macOS
+    sources:
+      - path: HoursWidget
+      - path: Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.hoursapp.Hours.Widget
+        PRODUCT_NAME: HoursWidget
+        INFOPLIST_FILE: HoursWidget/Info.plist
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Hours
+        OTHER_CODE_SIGN_FLAGS: --entitlements $(SRCROOT)/HoursWidget/HoursWidget.entitlements
+        SKIP_INSTALL: YES
   HoursTests:
     type: bundle.unit-test
     platform: macOS

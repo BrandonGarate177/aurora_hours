@@ -24,7 +24,7 @@ import Testing
 
     @Test func noHoursStoreMeansTheDefaultStoresChannel() {
         let unset = DebugControl.channel(for: Store.defaultURL(environment: [:]))
-        #expect(unset.rawValue.hasSuffix("/Library/Application Support/Hours/store.json"))
+        #expect(unset.rawValue.hasSuffix("/Library/Group Containers/group.com.hoursapp.Hours/store.json"))
     }
 }
 #endif
