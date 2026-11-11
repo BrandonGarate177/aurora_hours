@@ -5,8 +5,8 @@ enum Layout {
     static let width: CGFloat = 300
     static let sidePadding: CGFloat = 14
     static let rowHeight: CGFloat = 24
-    /// Space between groups. There are no dividers.
-    static let groupGap: CGFloat = 14
+    /// Space between the rows. There are no dividers.
+    static let groupGap: CGFloat = 10
 }
 
 extension View {

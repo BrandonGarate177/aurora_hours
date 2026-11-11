@@ -21,7 +21,7 @@ test: project
 	$(XCB) test -quiet
 
 run: build
-	-pkill -x Hours
+	@pkill -x Hours || true
 	open $(APP)
 
 clean:

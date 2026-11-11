@@ -1,6 +1,6 @@
 # Hours
 
-A macOS menu bar app for clocking deep-focus hours. The menu bar reads `Hours`. Click it, click an area like `Coding`, and the bar reads `Coding 0:00` and counts up once a minute. Click the area again to stop.
+A macOS menu bar app for clocking deep-focus hours. The menu bar reads `Hours`. Click it, click an area like `Coding`, and the bar reads `Coding 0:00` and counts up once a minute. Click the area again to stop. Right-click the menu bar item for Quit.
 
 Needs macOS 14 or later. Building needs Xcode 26 and XcodeGen (`brew install xcodegen`).
 

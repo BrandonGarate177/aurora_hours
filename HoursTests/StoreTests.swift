@@ -93,3 +93,21 @@ import Testing
         #expect(MapSelection.load(from: defaults) == .all)
     }
 }
+
+@Suite struct MapSelectionTests {
+    let areas = [
+        FocusArea(id: "coding", name: "Coding", colorHex: "2da44e"),
+        FocusArea(id: "writing", name: "Writing", colorHex: "0969da"),
+    ]
+
+    @Test func clickingTheMapCyclesAllThenEachArea() {
+        #expect(MapSelection.all.next(in: areas) == .area("coding"))
+        #expect(MapSelection.area("coding").next(in: areas) == .area("writing"))
+        #expect(MapSelection.area("writing").next(in: areas) == .all)
+    }
+
+    @Test func aDeletedAreaMovesOnToTheFirstArea() {
+        #expect(MapSelection.area("gone").next(in: areas) == .area("coding"))
+        #expect(MapSelection.area("gone").next(in: []) == .all)
+    }
+}

@@ -2,14 +2,15 @@ import AppKit
 import Observation
 import SwiftUI
 
-/// The menu bar item and its popover. Idle reads "Hours"; running reads the
-/// area and time, "Coding 0:42".
+/// The menu bar item, its popover and its right-click menu. Idle reads
+/// "Hours"; running reads the area and time, "Coding 0:42".
 @MainActor
 final class StatusItemController: NSObject {
     private let store: Store
     private let clock: Clock
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private let popover = NSPopover()
+    private let menu = MenuController(onQuit: { NSApp.terminate(nil) })
     private var hosting: NSHostingView<DropdownView>?
     /// nil follows the menu bar, like every other status item's popover.
     var popoverAppearance: NSAppearance?
@@ -21,7 +22,8 @@ final class StatusItemController: NSObject {
 
         if let button = statusItem.button {
             button.target = self
-            button.action = #selector(togglePopover)
+            button.action = #selector(clicked)
+            button.sendAction(on: [.leftMouseUp, .rightMouseUp])
         }
 
         popover.behavior = .transient
@@ -34,8 +36,7 @@ final class StatusItemController: NSObject {
         let view = DropdownView(
             store: store,
             clock: clock,
-            onArea: { [weak self] id in self?.areaClicked(id) },
-            onQuit: { NSApp.terminate(nil) }
+            onArea: { [weak self] id in self?.areaClicked(id) }
         )
         let hosting = NSHostingView(rootView: view)
         self.hosting = hosting
@@ -46,8 +47,12 @@ final class StatusItemController: NSObject {
 
     // MARK: Popover
 
-    @objc private func togglePopover() {
-        if popover.isShown {
+    /// Left click toggles the dropdown. Right click or control-click shows the menu.
+    @objc private func clicked() {
+        let event = NSApp.currentEvent
+        if event?.type == .rightMouseUp || event?.modifierFlags.contains(.control) == true {
+            showMenu()
+        } else if popover.isShown {
             closePopover()
         } else {
             openPopover()
@@ -69,9 +74,25 @@ final class StatusItemController: NSObject {
         popover.performClose(nil)
     }
 
-    /// What a click on an area row does: start, stop or switch, then close.
+    /// Pops the standard menu under the item, the way system items do.
+    func showMenu() {
+        closePopover()
+        statusItem.menu = menu.menu
+        statusItem.button?.performClick(nil)
+        statusItem.menu = nil
+    }
+
+    func cancelMenu() {
+        menu.menu.cancelTracking()
+    }
+
+    /// What a click on an area word does: start, stop or switch, then close.
+    /// Starting one also switches the map to that area.
     func areaClicked(_ id: String) {
         store.toggle(id, now: Date())
+        if let running = store.running {
+            MapSelection.area(running.areaId).save()
+        }
         clock.align(to: store.running?.start ?? Date())
         closePopover()
     }
