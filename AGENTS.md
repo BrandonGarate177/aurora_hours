@@ -36,6 +36,12 @@ A command reaches only the copy whose store matches the script's `HOURS_STORE`, 
 
 To press a button inside the popover without the debug script, use the Accessibility API by pid (`AXUIElementCreateApplication`, then `AXPress` on the element); it works on your own Debug build. The UserDefaults domain `com.hoursapp.Hours` is shared by every running build on this Mac, so restore any key you change (`mapSelection`, share settings) when you finish.
 
+### Pomodoro
+
+`HOURS_POMODORO_SCALE=0.01` on launch (Debug builds only) multiplies every interval and break, so `25 / 5` runs 15 s of work and a 3 s break; `0.05` gives 75 s and 15 s, enough to screenshot the break. The one-minute rule for a call ending mid-break scales too; the 5 s call check does not. The debug script picks a preset with `pomodoro:25/5` (or `off`, `50/10`, `90/15`), presses Skip with `skip`, and fakes a call with `call:on` (`call:off`, and `call:auto` to go back to the real camera and mic). For a real call, hold the default input open: `ffmpeg -f avfoundation -i ":<index of the default mic>" -f null -` (list the indexes with `ffmpeg -f avfoundation -list_devices true -i ""`).
+
+The break covers every screen at `.screenSaver` level and takes focus, so it gets in the way of anyone, or any other agent, using this Mac. Keep test breaks short. Capture a break by window id (owner `Hours`, layer 1000). The preset is in UserDefaults under `pomodoro`: delete it when you finish (`defaults delete com.hoursapp.Hours pomodoro`). The phase sits next to the store as `<store name>.pomodoro.json`.
+
 ## Design rules
 
 The design pictures (six rows: areas, Today, switcher, map, share, block, quit) are out of date. The person condensed the dropdown to the three rows below; build on these.
@@ -45,13 +51,13 @@ The design pictures (six rows: areas, Today, switcher, map, share, block, quit) 
 - No emojis anywhere: UI, copy, comments, commits, PRs.
 - The only color in the app is each focus area's own color, and it shows only in that area's map. Area names, the menu and every other row are plain text.
 - Text uses `.primary` and `.secondary` (system label colors), never a hand-picked gray.
-- Menu bar: idle `Hours`, running `Coding 0:42`. Monospaced digits. Ticks once a minute.
+- Menu bar: idle `Hours`, running `Coding 0:42`. Monospaced digits. Ticks once a minute. With Pomodoro on it counts the interval down by the second, `Coding 24:59`, and a break reads `Break 4:59`.
 - Left click opens the dropdown. Right click or control-click opens a standard menu (see below).
 - The dropdown is three rows, 300 pt wide, 14 pt side padding, about 130 pt tall, rows separated by space only:
   1. The area words on one line, `Coding  Writing  Study`. The running one is bold with its time, `Coding 0:42`. Click a word to start, again to stop, another to switch; the dropdown closes. At the right of the same row, today's total as a light `.title` numeral with monospaced digits, `2:15`. There is no separate Today row.
   2. The map, 264 x 34 pt. There is no switcher row. `MapSelection` follows the running area when a session starts, stays on the last pick when idle (All by default), and a click on the map cycles All, then each area. The cycling is already built in `MapSection.swift`; the map task only draws.
   3. `Share  1 year  No hours`.
-- The right-click menu: `Block sites` (checkmark item), `Edit blocked list`, `Open at login`, `Quit`. Quit is the only way to quit.
+- The right-click menu: `Block sites` (checkmark item), `Edit blocked list`, `Pomodoro` (submenu `Off`, `25 / 5`, `50 / 10`, `90 / 15`, checkmark on the current one), `Open at login`, `Quit`. Quit is the only way to quit.
 - The popover background is Liquid Glass on macOS 26 and the `.popover` material before that. Only `Glass.swift` knows which.
 
 ## Widget and signing
@@ -70,7 +76,9 @@ The design pictures (six rows: areas, Today, switcher, map, share, block, quit) 
 |---|---|
 | `Hours/App/HoursApp.swift` | Entry point and app delegate. Builds the store and clock, makes the status item. A running session stays running across quit and relaunch. |
 | `Hours/App/StatusItemController.swift` | Menu bar title, left click (popover) versus right click (menu), what an area click does, including pointing `MapSelection` at the area that starts. `openPopover()` is what onboarding calls to show the dropdown once. |
-| `Hours/App/MenuController.swift` | The right-click menu. `Block sites` flips `Blocker.isOn`; `Edit blocked list` opens blocked.txt in the default text editor; `Open at login` flips `LoginItem`. |
+| `Hours/App/MenuController.swift` | The right-click menu. `Block sites` flips `Blocker.isOn`; `Edit blocked list` opens blocked.txt in the default text editor; `Pomodoro` is a submenu of presets; `Open at login` flips `LoginItem`. |
+| `Hours/App/BreakWindow.swift` | The full-screen break: one borderless window per screen at `.screenSaver` level, `Break`, the time left, `Skip` (Esc too). Shown while `Pomodoro.showsBreakWindow` is true. |
+| `Hours/App/CallDetector.swift` | Whether the person is on a call: any camera running (CoreMediaIO) or the default input running (CoreAudio). Screen sharing is not detected; there is no public signal for another app capturing the screen. |
 | `Hours/App/Glass.swift` | The popover background. The `#available(macOS 26)` switch lives only here. |
 | `Hours/App/DebugControl.swift` | Debug-only command listener for scripts. |
 | `Hours/AppIcon.icon`, `Hours/Assets.xcassets/AppIcon.appiconset` | App icon. `AppIcon.icon` is the Icon Composer format: Xcode 26 builds the macOS 26 icon and the `AppIcon.icns` for macOS 14 and 15 from it. The PNG set alone would be drawn inside a gray frame on macOS 26. Both are generated; don't edit them by hand. |
@@ -84,6 +92,7 @@ The design pictures (six rows: areas, Today, switcher, map, share, block, quit) 
 | `Hours/Model/HostsFile.swift` | The hosts rewrite, a pure function: given the file text and the hosts, it returns the text with Hours' lines between `# hours start` and `# hours end` (127.0.0.1 and ::1, each host and its `www.` form). Lines outside the markers stay as they are. Also parses blocked.txt. |
 | `Hours/Model/Blocker.swift` | Site blocking. Blocks while a session runs and the setting (UserDefaults `blockSites`, off by default) is on; follows session starts and stops by observing `store.running`. Quit unblocks (`applicationWillTerminate`); launch removes a stale block unless its session is still running. blocked.txt stays in `~/Library/Application Support/Hours/` (next to `HOURS_STORE` when set); only the app reads it. |
 | `Hours/Model/Clock.swift` | The minute tick. Lines up with the running session's start. Views read `clock.now`. |
+| `Hours/Model/Pomodoro.swift` | Presets (in UserDefaults under `pomodoro`), the interval state machine and the call rule. Starting an area starts interval 1; an interval's end closes the session and starts a break; the break's end starts a new session of the same area. Every 4th break is 3x. Area clicks go through it (`areaClicked`), so a click during a break stops the run. |
 | `Shared/HoursMinutes.swift` | `hoursMinutes(_:)`, the `h:mm` format used by the bar and the dropdown. |
 | `Hours/Views/DropdownView.swift` | Stacks the three rows. |
 | `Hours/Views/Row.swift` | Shared sizes (`Layout`) and the `.row()` modifier. |
@@ -95,6 +104,7 @@ The design pictures (six rows: areas, Today, switcher, map, share, block, quit) 
 | `HoursWidget/` | The widget extension: `HoursWidget.swift` (bundle, timeline provider, small and medium views), `MapIntent.swift` (the All or one-area setting), `Info.plist`. |
 | `Entitlements/` | App group entitlements for the app and the widget (sandbox too). The Makefile writes team-prefixed copies into `build/entitlements` for TEAM builds. |
 | `HoursTests/WidgetTests.swift` | Timeline dates, the store migration, and widget map data against the dropdown's. |
+| `HoursTests/PomodoroTests.swift` | Interval math, the session split, skip, stop during a break, and the call rule with a fake detector. |
 | `HoursTests/TotalsTests.swift`, `HoursTests/StoreTests.swift` | Unit tests (`StoreTests.swift` also holds the `MapSelection` tests). Add a new file per feature rather than growing these. |
 
 ## Site blocking
