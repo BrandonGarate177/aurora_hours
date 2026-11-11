@@ -7,7 +7,7 @@ Hours is a macOS menu bar app for clocking deep-focus hours. Swift 6 (language m
 ```sh
 make build   # xcodegen generate, then xcodebuild into ./build
 make test    # same, then runs HoursTests (Swift Testing)
-make run     # build, quit any running Hours, open build/Build/Products/Debug/Hours.app
+make run     # build, stop the copy this checkout's last make run started, start the new one
 ```
 
 - `project.yml` is the project. `Hours.xcodeproj` is generated and gitignored. Sources are folder globs (`Hours/`, `HoursTests/`), so a new file is picked up by the next `make` without touching `project.yml`.
@@ -28,7 +28,7 @@ swift scripts/hours-debug.swift close
 swift scripts/hours-debug.swift menu          # right-click menu, closes itself after 3 s
 ```
 
-A command reaches only the copy whose store matches the script's `HOURS_STORE`, spelled the same way, so copies with different stores don't hear each other. Export it once (`export HOURS_STORE=/tmp/h.json`) before launching the app and running the script. `make run` starts the app with the default store, which the script reaches when `HOURS_STORE` is unset.
+A command reaches only the copy whose store matches the script's `HOURS_STORE`, spelled the same way, so copies with different stores don't hear each other. Export it once (`export HOURS_STORE=/tmp/h.json`) before launching the app and running the script. `make run` passes `HOURS_STORE` through, so `HOURS_STORE=/tmp/h.json make run` pairs with the script run the same way. It keeps its copy's pid in `build/hours.pid` and stops only that copy, never other checkouts' copies; the app's output goes to `build/hours.log`.
 
 `HOURS_APPEARANCE=light` (or `dark`) on launch forces the popover's appearance for screenshots. To capture the popover, find its window id with `CGWindowListCopyWindowInfo` (owner `Hours`, layer 25) and run `screencapture -x -o -l <id>`. On macOS 26 the menu bar item itself is drawn by Control Center (owner `Control Center`, window name `com.hoursapp.Hours`); capture it with `screencapture -R` over that window's bounds. If the menu bar of the active display is hidden (a full-screen app), a popover opened from code is placed off that screen; capturing by window id still works.
 
