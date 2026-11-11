@@ -12,6 +12,7 @@ final class BreakWindow {
     /// The app in front before the break took over; it gets focus back after.
     private var previousApp: NSRunningApplication?
     private var screenObserver: NSObjectProtocol?
+    private var escMonitor: Any?
 
     init(pomodoro: Pomodoro) {
         self.pomodoro = pomodoro
@@ -46,11 +47,19 @@ final class BreakWindow {
         NSApp.activate(ignoringOtherApps: true)
         let main = windows.first { $0.screen == NSScreen.main } ?? windows.first
         main?.makeKeyAndOrderFront(nil)
+        // Esc skips the break whichever of its windows is key.
+        escMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            guard event.keyCode == 53 else { return event }
+            MainActor.assumeIsolated { self?.pomodoro.skip() }
+            return nil
+        }
     }
 
     private func hide() {
         for window in windows { window.orderOut(nil) }
         windows = []
+        if let escMonitor { NSEvent.removeMonitor(escMonitor) }
+        escMonitor = nil
         previousApp?.activate()
         previousApp = nil
     }
@@ -79,7 +88,7 @@ final class BreakWindow {
 }
 
 /// Borderless windows refuse key status by default; this one takes it, so
-/// Esc reaches the Skip button.
+/// the app's keys, Esc among them, reach it.
 private final class KeyableWindow: NSWindow {
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { true }
@@ -101,7 +110,6 @@ struct BreakView: View {
                 .buttonStyle(.plain)
                 .font(.title3)
                 .foregroundStyle(.primary)
-                .keyboardShortcut(.cancelAction)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(nsColor: .textBackgroundColor))
