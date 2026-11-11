@@ -21,7 +21,7 @@ struct DropdownView: View {
                 today: Totals.today(store.sessions, now: clock.now),
                 onArea: onArea
             )
-            MapSection(areas: store.areas, selection: $selection)
+            MapSection(areas: store.areas, sessions: store.sessions, now: clock.now, selection: $selection)
             ShareRow(store: store)
         }
         .padding(.horizontal, Layout.sidePadding)
