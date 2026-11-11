@@ -6,7 +6,7 @@ SCHEME   := Hours
 DERIVED  := build
 APP      := $(DERIVED)/Build/Products/Debug/Hours.app
 XCB      := xcodebuild -project $(PROJECT) -scheme $(SCHEME) -configuration Debug \
-            -derivedDataPath $(DERIVED) -destination 'platform=macOS' \
+            -derivedDataPath $(DERIVED) -destination 'platform=macOS,arch=$(shell uname -m)' \
             CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO
 
 .PHONY: project build test run clean

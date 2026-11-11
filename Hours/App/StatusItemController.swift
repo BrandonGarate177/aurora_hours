@@ -11,6 +11,8 @@ final class StatusItemController: NSObject {
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private let popover = NSPopover()
     private var hosting: NSHostingView<DropdownView>?
+    /// nil follows the menu bar, like every other status item's popover.
+    var popoverAppearance: NSAppearance?
 
     init(store: Store, clock: Clock) {
         self.store = store
@@ -46,11 +48,16 @@ final class StatusItemController: NSObject {
 
     @objc private func togglePopover() {
         if popover.isShown {
-            popover.performClose(nil)
-            return
+            closePopover()
+        } else {
+            openPopover()
         }
-        guard let button = statusItem.button else { return }
+    }
+
+    func openPopover() {
+        guard !popover.isShown, let button = statusItem.button else { return }
         clock.refresh()
+        popover.appearance = popoverAppearance
         if let hosting {
             popover.contentSize = hosting.fittingSize
         }
@@ -58,10 +65,15 @@ final class StatusItemController: NSObject {
         NSApp.activate()
     }
 
-    private func areaClicked(_ id: String) {
+    func closePopover() {
+        popover.performClose(nil)
+    }
+
+    /// What a click on an area row does: start, stop or switch, then close.
+    func areaClicked(_ id: String) {
         store.toggle(id, now: Date())
         clock.align(to: store.running?.start ?? Date())
-        popover.performClose(nil)
+        closePopover()
     }
 
     // MARK: Title

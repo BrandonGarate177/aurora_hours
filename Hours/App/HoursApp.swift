@@ -27,7 +27,11 @@ final class HoursApp: NSObject, NSApplicationDelegate {
 
         self.store = store
         self.clock = clock
-        statusItem = StatusItemController(store: store, clock: clock)
+        let statusItem = StatusItemController(store: store, clock: clock)
+        self.statusItem = statusItem
+        #if DEBUG
+        DebugControl.shared.listen(statusItem: statusItem)
+        #endif
     }
 
     private static var isRunningTests: Bool {
