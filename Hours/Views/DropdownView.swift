@@ -22,7 +22,7 @@ struct DropdownView: View {
                 onArea: onArea
             )
             MapSection(areas: store.areas, selection: $selection)
-            ShareRow()
+            ShareRow(store: store)
         }
         .padding(.horizontal, Layout.sidePadding)
         .padding(.vertical, 12)
