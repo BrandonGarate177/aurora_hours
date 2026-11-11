@@ -6,8 +6,9 @@ import AppKit
 /// Commands: open, close, area:<id>, menu (shows the right-click menu for
 /// three seconds), and for the onboarding window onboard:names:<a,b,c>,
 /// onboard:color:<field 0-2> (a click on that square), onboard:start, and
-/// login:toggle (what a click on Open at login in the menu does). HOURS_APPEARANCE=light or dark forces
-/// the app's appearance, for screenshots of the mode the Mac isn't in.
+/// login:toggle (what a click on Open at login in the menu does).
+/// HOURS_APPEARANCE=light or dark forces the app's appearance, for
+/// screenshots of the mode the Mac isn't in.
 @MainActor
 final class DebugControl {
     static let shared = DebugControl()
