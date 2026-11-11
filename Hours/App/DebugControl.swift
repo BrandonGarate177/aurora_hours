@@ -9,7 +9,14 @@ import AppKit
 @MainActor
 final class DebugControl {
     static let shared = DebugControl()
-    static let notification = Notification.Name("com.hoursapp.Hours.debug")
+
+    /// The notification name a copy listens on. It carries the store's path,
+    /// so copies running with different HOURS_STORE files don't hear each
+    /// other. scripts/hours-debug.swift builds the same name from its own
+    /// HOURS_STORE; change both together.
+    nonisolated static func channel(for store: URL) -> Notification.Name {
+        Notification.Name("com.hoursapp.Hours.debug:" + store.standardizedFileURL.path)
+    }
 
     private weak var statusItem: StatusItemController?
 
@@ -21,7 +28,7 @@ final class DebugControl {
         default: break
         }
         DistributedNotificationCenter.default().addObserver(
-            self, selector: #selector(received(_:)), name: Self.notification, object: nil,
+            self, selector: #selector(received(_:)), name: Self.channel(for: Store.defaultURL()), object: nil,
             suspensionBehavior: .deliverImmediately
         )
     }
