@@ -57,8 +57,8 @@ The design pictures (six rows: areas, Today, switcher, map, share, block, quit) 
 | `Hours/App/MenuController.swift` | The right-click menu. Site blocking fills `blockSites` and `editBlockedList`; onboarding fills `openAtLogin`. |
 | `Hours/App/Glass.swift` | The popover background. The `#available(macOS 26)` switch lives only here. |
 | `Hours/App/DebugControl.swift` | Debug-only command listener for scripts. |
-| `Hours/Assets.xcassets/AppIcon.appiconset` | App icon. Generated, don't edit the PNGs by hand. |
-| `scripts/icon.svg`, `scripts/make-icon.sh` | Icon source and generator. Edit the SVG, then run `./scripts/make-icon.sh`. It uses `sips`, which ships with macOS and reads SVG. |
+| `Hours/AppIcon.icon`, `Hours/Assets.xcassets/AppIcon.appiconset` | App icon. `AppIcon.icon` is the Icon Composer format: Xcode 26 builds the macOS 26 icon and the `AppIcon.icns` for macOS 14 and 15 from it. The PNG set alone would be drawn inside a gray frame on macOS 26. Both are generated; don't edit them by hand. |
+| `scripts/icon.svg`, `scripts/make-icon.sh` | Icon source and generator. Edit the SVG, then run `./scripts/make-icon.sh`; it rewrites the PNG set and the `.icon` layer. It uses `sips`, which ships with macOS and reads SVG. To check how Finder draws it: `NSWorkspace.shared.icon(forFile:)` on a fresh copy of the built app (the icon cache keys on the path). |
 | `Hours/Model/FocusArea.swift` | `id`, `name`, `colorHex` (six hex digits, no `#`). |
 | `Hours/Model/Session.swift` | `areaId`, `start`, `end` (nil while running). |
 | `Hours/Model/Store.swift` | Loads and saves `StoreFile` as JSON, atomically. `Store.defaultURL()` is the one place the location is decided: the widget task points it at an app group container. Start, stop and switch (`toggle`). The seed (`seedIfEmpty`, marked `SEED`) goes when onboarding lands. |

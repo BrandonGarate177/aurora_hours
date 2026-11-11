@@ -1,6 +1,14 @@
 #!/bin/sh
-# Regenerates every size in Hours/Assets.xcassets/AppIcon.appiconset from
-# scripts/icon.svg. Uses sips, which ships with macOS and reads SVG.
+# Regenerates the app icon from scripts/icon.svg:
+#   Hours/AppIcon.icon        Icon Composer format. Xcode 26 compiles it into the
+#                             macOS 26 icon and the AppIcon.icns older macOS uses.
+#                             Its layer is the SVG's squares; the white fill and
+#                             the squircle come from icon.json and the system.
+#   Hours/Assets.xcassets/AppIcon.appiconset
+#                             The classic PNG set, every size. macOS 26 draws an
+#                             icon set like this inside a gray frame, which is
+#                             why AppIcon.icon exists.
+# Uses sips, which ships with macOS and reads SVG.
 set -eu
 
 root=$(cd "$(dirname "$0")/.." && pwd)
@@ -44,5 +52,9 @@ cat > "$root/Hours/Assets.xcassets/Contents.json" <<'JSON'
   "info" : { "author" : "xcode", "version" : 1 }
 }
 JSON
+
+# The .icon layer: every shape except the white squircle, which the system draws.
+mkdir -p "$root/Hours/AppIcon.icon/Assets"
+grep -v 'rx="185"' "$svg" | grep -v '<!--' > "$root/Hours/AppIcon.icon/Assets/grid.svg"
 
 echo "Wrote $(ls "$out" | grep -c png) PNGs to $out"
