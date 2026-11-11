@@ -11,7 +11,7 @@ XCB      := xcodebuild -project $(PROJECT) -scheme $(SCHEME) -configuration Debu
             -derivedDataPath $(DERIVED) -destination 'platform=macOS,arch=$(shell uname -m)' \
             CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO
 
-.PHONY: project build test run clean
+.PHONY: project build test run seed clean
 
 project:
 	xcodegen generate --quiet
@@ -31,6 +31,12 @@ run: build
 		kill $$pid; while kill -0 $$pid 2>/dev/null; do sleep 0.1; done; \
 	fi
 	@nohup '$(BIN)' > $(DERIVED)/hours.log 2>&1 & echo $$! > $(PIDFILE)
+
+# A year of made-up sessions in the store at HOURS_STORE, to see the map:
+#   HOURS_STORE=/tmp/hours-seed.json make seed run
+seed:
+	@test -n "$(HOURS_STORE)" || { echo "seed: set HOURS_STORE=/path/store.json"; exit 2; }
+	swift scripts/seed.swift "$(HOURS_STORE)"
 
 clean:
 	rm -rf $(DERIVED) $(PROJECT)
