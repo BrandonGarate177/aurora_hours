@@ -8,6 +8,11 @@ import AppKit
 /// and for the onboarding window onboard:names:<a,b,c>,
 /// onboard:color:<field 0-2> (a click on that square), onboard:start, and
 /// login:toggle (what a click on Open at login in the menu does).
+/// For Pomodoro: pomodoro:<off|25/5|50/10|90/15> (a pick in its submenu),
+/// skip (the Skip word on the break), and call:on, call:off, call:auto to fake
+/// a call or its absence (auto goes back to the camera and mic).
+/// HOURS_POMODORO_SCALE=0.01 shortens every interval and break, so 25 / 5
+/// runs 15 s of work and 3 s of break.
 /// HOURS_APPEARANCE=light or dark forces the app's appearance, for
 /// screenshots of the mode the Mac isn't in.
 @MainActor
@@ -24,6 +29,8 @@ final class DebugControl {
 
     private weak var statusItem: StatusItemController?
     weak var onboarding: OnboardingWindow?
+    weak var pomodoro: Pomodoro?
+    weak var callDetector: SystemCallDetector?
 
     func listen(statusItem: StatusItemController) {
         self.statusItem = statusItem
@@ -66,6 +73,14 @@ final class DebugControl {
         case "onboard:start": onboarding?.start()
         case "login:toggle": LoginItem.set(!LoginItem.isOn)
         case "quit": NSApp.terminate(nil)
+        case _ where command.hasPrefix("pomodoro:"):
+            if let preset = PomodoroPreset(rawValue: String(command.dropFirst("pomodoro:".count))) {
+                pomodoro?.setPreset(preset)
+            }
+        case "skip": pomodoro?.skip()
+        case "call:on": callDetector?.forced = true
+        case "call:off": callDetector?.forced = false
+        case "call:auto": callDetector?.forced = nil
         case _ where command.hasPrefix("area:"): statusItem.areaClicked(String(command.dropFirst(5)))
         case _ where command.hasPrefix("item:"): statusItem.performMenuItem(titled: String(command.dropFirst(5)))
         default: NSLog("Hours debug: unknown command \(command)")

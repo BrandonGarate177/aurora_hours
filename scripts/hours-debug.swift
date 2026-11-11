@@ -9,12 +9,15 @@
 //   swift scripts/hours-debug.swift onboard:color:0   (click the first square)
 //   swift scripts/hours-debug.swift onboard:start
 //   swift scripts/hours-debug.swift login:toggle   (Open at login in the menu)
+//   swift scripts/hours-debug.swift pomodoro:25/5  (or off, 50/10, 90/15)
+//   swift scripts/hours-debug.swift skip           (Skip on the break)
+//   swift scripts/hours-debug.swift call:on        (fake a call; call:off, call:auto)
 // The command reaches only the copy whose store is this shell's HOURS_STORE
 // (the default store when unset), so set it the same way as for the app.
 import Foundation
 
 guard CommandLine.arguments.count == 2 else {
-    print("usage: swift scripts/hours-debug.swift open | close | menu | area:<id> | item:<title> | quit | onboard:names:<a,b,c> | onboard:color:<0-2> | onboard:start | login:toggle")
+    print("usage: swift scripts/hours-debug.swift open | close | menu | area:<id> | item:<title> | quit | onboard:names:<a,b,c> | onboard:color:<0-2> | onboard:start | login:toggle | pomodoro:<off|25/5|50/10|90/15> | skip | call:<on|off|auto>")
     exit(2)
 }
 

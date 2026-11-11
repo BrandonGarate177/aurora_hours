@@ -7,6 +7,8 @@ final class HoursApp: NSObject, NSApplicationDelegate {
     private var store: Store?
     private var clock: Clock?
     private var blocker: Blocker?
+    private var pomodoro: Pomodoro?
+    private var breakWindow: BreakWindow?
     private var statusItem: StatusItemController?
     private var onboarding: OnboardingWindow?
 
@@ -31,14 +33,22 @@ final class HoursApp: NSObject, NSApplicationDelegate {
         let blocker = Blocker(store: store)
         blocker.follow()
 
+        let detector = SystemCallDetector()
+        let pomodoro = Pomodoro(store: store, detector: detector, scale: pomodoroScale())
+
         self.store = store
         self.clock = clock
         self.blocker = blocker
-        let statusItem = StatusItemController(store: store, clock: clock, blocker: blocker)
+        self.pomodoro = pomodoro
+        let statusItem = StatusItemController(store: store, clock: clock, blocker: blocker, pomodoro: pomodoro)
         self.statusItem = statusItem
         statusItem.onClickWithoutAreas = { [weak self] in self?.showOnboarding() }
+        breakWindow = BreakWindow(pomodoro: pomodoro)
+        pomodoro.startTicking()
         #if DEBUG
         DebugControl.shared.listen(statusItem: statusItem)
+        DebugControl.shared.pomodoro = pomodoro
+        DebugControl.shared.callDetector = detector
         #endif
 
         if store.areas.isEmpty {

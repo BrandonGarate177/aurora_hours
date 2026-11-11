@@ -4,11 +4,13 @@ import SwiftUI
 import WidgetKit
 
 /// The menu bar item, its popover and its right-click menu. Idle reads
-/// "Hours"; running reads the area and time, "Coding 0:42".
+/// "Hours"; running reads the area and time, "Coding 0:42". With Pomodoro on
+/// it counts the interval down, "Coding 24:59", and a break reads "Break 4:59".
 @MainActor
 final class StatusItemController: NSObject {
     private let store: Store
     private let clock: Clock
+    private let pomodoro: Pomodoro
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private let popover = NSPopover()
     private let menu: MenuController
@@ -18,10 +20,11 @@ final class StatusItemController: NSObject {
     /// A left click with no areas yet reopens onboarding instead of an empty dropdown.
     var onClickWithoutAreas: (() -> Void)?
 
-    init(store: Store, clock: Clock, blocker: Blocker) {
+    init(store: Store, clock: Clock, blocker: Blocker, pomodoro: Pomodoro) {
         self.store = store
         self.clock = clock
-        menu = MenuController(blocker: blocker, onQuit: { NSApp.terminate(nil) })
+        self.pomodoro = pomodoro
+        menu = MenuController(blocker: blocker, pomodoro: pomodoro, onQuit: { NSApp.terminate(nil) })
         super.init()
 
         if let button = statusItem.button {
@@ -103,9 +106,10 @@ final class StatusItemController: NSObject {
 
     /// What a click on an area word does: start, stop or switch, then close.
     /// Starting one also switches the map to that area, and the widget redraws
-    /// so its total is right within the minute.
+    /// so its total is right within the minute. Pomodoro decides what a click
+    /// during a break means.
     func areaClicked(_ id: String) {
-        store.toggle(id, now: Date())
+        pomodoro.areaClicked(id, now: Date())
         WidgetCenter.shared.reloadAllTimelines()
         if let running = store.running {
             MapSelection.area(running.areaId).save()
@@ -116,7 +120,8 @@ final class StatusItemController: NSObject {
 
     // MARK: Title
 
-    /// Redraws the title whenever the running session or the minute changes.
+    /// Redraws the title whenever the running session, the minute, or with
+    /// Pomodoro on, the second changes.
     private func updateTitle() {
         withObservationTracking {
             render()
@@ -128,7 +133,11 @@ final class StatusItemController: NSObject {
     private func render() {
         guard let button = statusItem.button else { return }
         let text: String
-        if let session = store.running, let area = store.area(id: session.areaId) {
+        if case .rest = pomodoro.phase {
+            text = "Break \(minutesSeconds(pomodoro.remaining))"
+        } else if case .work = pomodoro.phase, let session = store.running, let area = store.area(id: session.areaId) {
+            text = "\(area.name) \(minutesSeconds(pomodoro.remaining))"
+        } else if let session = store.running, let area = store.area(id: session.areaId) {
             text = "\(area.name) \(hoursMinutes(session.duration(now: clock.now)))"
         } else {
             text = "Hours"
