@@ -42,9 +42,9 @@ struct ShareMap: Equatable, Sendable {
 ///
 ///     <base>#1.<color hex or all>.<last day YYYYMMDD>.<0 | 1>.<one base64url character per day>
 enum ShareLink {
-    /// The share page. This is a placeholder until the repo has a GitHub Pages
-    /// site; change it to that site's address then.
-    static let base = "https://OWNER.github.io/hours/"
+    /// The share page, deployed to the repo's GitHub Pages site by
+    /// .github/workflows/pages.yml.
+    static let base = "https://brandongarate177.github.io/aurora_hours/"
 
     /// UserDefaults key for the No hours / With hours setting.
     static let withHoursKey = "shareWithHours"

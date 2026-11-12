@@ -16,7 +16,7 @@ import Testing
         FocusArea(id: "writing", name: "Writing", colorHex: "0969DA"),
     ]
 
-    let base = "https://OWNER.github.io/hours/"
+    let base = "https://brandongarate177.github.io/aurora_hours/"
 
     func date(_ y: Int, _ m: Int, _ d: Int, _ h: Int, _ min: Int = 0) -> Date {
         calendar.date(from: DateComponents(year: y, month: m, day: d, hour: h, minute: min))!
@@ -42,13 +42,13 @@ import Testing
     }
 
     @Test func theBaseURLIsTheOneConstant() {
-        #expect(ShareLink.base == "https://OWNER.github.io/hours/")
+        #expect(ShareLink.base == "https://brandongarate177.github.io/aurora_hours/")
     }
 
     @Test func anEmptyYearIs365EmptyDays() {
         let url = link(map([], withHours: false))
         #expect(url == base + "#1.all.20261111.0." + String(repeating: "A", count: 365))
-        #expect(url.count == 413)
+        #expect(url.count == 431)
     }
 
     @Test func aSingleHourAndAHalfToday() {
@@ -131,16 +131,16 @@ import Testing
     }
 
     /// The same 70 days as `python3 -I site/sample-link.py 70 --ramp [--hours]
-    /// --end 20261111 --base https://OWNER.github.io/hours/`, which prints these.
+    /// --end 20261111 --base https://brandongarate177.github.io/aurora_hours/`, which prints these.
     @Test func agreesWithTheSiteSampleScript() {
         let ramp = ShareMap(
             color: "2da44e", lastDay: date(2026, 11, 11, 0),
             quarters: (0..<70).map { $0 % 64 }, withHours: true
         )
-        #expect(link(ramp) == "https://OWNER.github.io/hours/#1.2da44e.20261111.1.ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_ABCDEF")
+        #expect(link(ramp) == "https://brandongarate177.github.io/aurora_hours/#1.2da44e.20261111.1.ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_ABCDEF")
         var shaded = ramp
         shaded.withHours = false
-        #expect(link(shaded) == "https://OWNER.github.io/hours/#1.2da44e.20261111.0.ABBBCCCCDDDDDDDDEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEABBBCC")
+        #expect(link(shaded) == "https://brandongarate177.github.io/aurora_hours/#1.2da44e.20261111.0.ABBBCCCCDDDDDDDDEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEABBBCC")
     }
 
     @Test func totalRoundsLikeTheSharePage() {
