@@ -1,0 +1,52 @@
+# Builds Hours.app on a pushed v* tag and attaches Hours-<tag>.zip and
+# Hours-<tag>.dmg to a draft GitHub Release for that tag. Publish the draft by hand.
+# The build is ad hoc signed with no team and not notarized, so the desktop
+# widget draws an empty map and macOS asks before the first open.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    # macos-26 ships Xcode 26 as its default Xcode; macos-15 defaults to Xcode 16.
+    runs-on: macos-26
+    env:
+      TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Show Xcode
+        run: xcodebuild -version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Build Release
+        run: |
+          xcodegen generate --quiet
+          xcodebuild -project Hours.xcodeproj -scheme Hours -configuration Release \
+            -derivedDataPath build -destination 'generic/platform=macOS' \
+            CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO \
+            build -quiet
+
+      - name: Package
+        run: |
+          app=build/Build/Products/Release/Hours.app
+          codesign --verify --deep --strict "$app"
+          mkdir dist
+          ditto -c -k --keepParent "$app" "dist/Hours-$TAG.zip"
+          mkdir dmg
+          ditto "$app" dmg/Hours.app
+          ln -s /Applications dmg/Applications
+          hdiutil create -volname Hours -srcfolder dmg -ov -format UDZO "dist/Hours-$TAG.dmg"
+          ls -l dist
+
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$TAG" dist/* --draft --title "Hours $TAG" --generate-notes --verify-tag
