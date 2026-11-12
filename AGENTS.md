@@ -124,3 +124,7 @@ One JSON file, plain `Codable` with default coders, so any target decodes it wit
 ```
 
 Dates are seconds since 2001-01-01 UTC (Swift's default `Date` encoding). A running session has no `end`. A file that fails to decode is renamed to `store.unreadable-<unix time>.json` and the app starts empty, so a bad write never gets saved over.
+
+## Releases
+
+To cut a release, push a `v*` tag (`git tag v0.2 && git push origin v0.2`). `.github/workflows/release.yml` builds Release ad hoc on `macos-26` and attaches `Hours-<tag>.zip` and `Hours-<tag>.dmg` to a draft GitHub Release, which the person then publishes from the Releases page.
