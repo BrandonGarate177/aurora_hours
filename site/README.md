@@ -73,4 +73,4 @@ Open the link with `python3 -m http.server` running in `site/` (the default base
 
 ## Publishing
 
-`.github/workflows/pages.yml` deploys `index.html` to GitHub Pages on every push to `main` that touches `site/`, and can be run by hand from the Actions tab. Once per repo, set Settings > Pages > Source to **GitHub Actions**. The page lands at `https://<owner>.github.io/<repo>/`; nothing in it depends on that address, so the app's base URL is the only place it needs to be set.
+`.github/workflows/pages.yml` deploys `index.html` to GitHub Pages on every push to `main` that touches `site/`, and can be run by hand from the Actions tab. Once per repo, set Settings > Pages > Source to **GitHub Actions**. The page lands at `https://brandongarate177.github.io/aurora_hours/`. Nothing in the page depends on that address. The app's base URL, `ShareLink.base` in `Hours/Model/ShareLink.swift`, is the only place it's set.

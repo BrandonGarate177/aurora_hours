@@ -4,6 +4,16 @@ A macOS menu bar app for clocking deep-focus hours. The menu bar reads `Hours`. 
 
 Right-click, then Pomodoro, to work in intervals: pick `25 / 5`, `50 / 10` or `90 / 15` (work minutes / break minutes, every 4th break three times as long). The bar counts the interval down, and the break covers every screen until it ends or you press Skip or Esc. On a call (camera or mic in use) the break stays in the menu bar instead. Break time is never counted as focus.
 
+## Install
+
+Download the `.dmg` from [Releases](https://github.com/BrandonGarate177/aurora_hours/releases), open it, and drag Hours to Applications. Then open Hours from Applications.
+
+The download isn't notarized, so macOS blocks the first open. On macOS 14, right-click Hours, choose Open, then Open again. On macOS 15 and later, open System Settings > Privacy & Security and click Open Anyway next to the line about Hours.
+
+The desktop widget shows hours only in a build signed with an Apple team (`make build TEAM=<your team id>`, see the Makefile). In the download its map stays empty.
+
+## Build
+
 Needs macOS 14 or later. Building needs Xcode 26 and XcodeGen (`brew install xcodegen`).
 
 ```sh
