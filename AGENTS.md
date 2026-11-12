@@ -68,7 +68,7 @@ The design pictures (six rows: areas, Today, switcher, map, share, block, quit) 
 
 | File | Owns |
 |---|---|
-| `Hours/App/HoursApp.swift` | Entry point and app delegate. Builds the store and clock, makes the status item. The seed call is here. A running session stays running across quit and relaunch. |
+| `Hours/App/HoursApp.swift` | Entry point and app delegate. Builds the store and clock, makes the status item. A running session stays running across quit and relaunch. |
 | `Hours/App/StatusItemController.swift` | Menu bar title, left click (popover) versus right click (menu), what an area click does, including pointing `MapSelection` at the area that starts. `openPopover()` is what onboarding calls to show the dropdown once. |
 | `Hours/App/MenuController.swift` | The right-click menu. `Block sites` flips `Blocker.isOn`; `Edit blocked list` opens blocked.txt in the default text editor; `Open at login` flips `LoginItem`. |
 | `Hours/App/Glass.swift` | The popover background. The `#available(macOS 26)` switch lives only here. |
@@ -77,12 +77,12 @@ The design pictures (six rows: areas, Today, switcher, map, share, block, quit) 
 | `scripts/icon.svg`, `scripts/make-icon.sh` | Icon source and generator. Edit the SVG, then run `./scripts/make-icon.sh`; it rewrites the PNG set and the `.icon` layer. It uses `sips`, which ships with macOS and reads SVG. To check how Finder draws it: `NSWorkspace.shared.icon(forFile:)` on a fresh copy of the built app (the icon cache keys on the path). |
 | `Shared/FocusArea.swift` | `id`, `name`, `colorHex` (six hex digits, no `#`). |
 | `Shared/Session.swift` | `areaId`, `start`, `end` (nil while running). |
-| `Shared/Store.swift` | Loads and saves `StoreFile` as JSON, atomically. `Store.defaultURL()` (HOURS_STORE, else the group container), `groupURL()`, `legacyURL()` and `appGroup` decide the location. Start, stop and switch (`toggle`). The seed (`seedIfEmpty`, marked `SEED`) goes when onboarding lands. |
+| `Shared/Store.swift` | Loads and saves `StoreFile` as JSON, atomically. `Store.defaultURL()` (HOURS_STORE, else the group container), `groupURL()`, `legacyURL()` and `appGroup` decide the location. Start, stop and switch (`toggle`). |
 | `Hours/Model/StoreMigration.swift` | Picks the store file for this launch and copies the old Application Support store into the group container once. |
 | `Shared/Totals.swift` | Daily totals with sessions split at local midnight, today's total, per-area totals over N days as `[day: seconds]`. The map and share tasks read from here. |
 | `Hours/Model/MapSelection.swift` | Which map is shown (`.all` or `.area(id)`), in UserDefaults under `mapSelection`, and `next(in:)` for the click-to-cycle order. The share task reads it to know which map to share. |
 | `Hours/Model/HostsFile.swift` | The hosts rewrite, a pure function: given the file text and the hosts, it returns the text with Hours' lines between `# hours start` and `# hours end` (127.0.0.1 and ::1, each host and its `www.` form). Lines outside the markers stay as they are. Also parses blocked.txt. |
-| `Hours/Model/Blocker.swift` | Site blocking. Blocks while a session runs and the setting (UserDefaults `blockSites`, off by default) is on; follows session starts and stops by observing `store.running`. Quit unblocks (`applicationWillTerminate`); launch removes a stale block unless its session is still running. blocked.txt sits next to the store. |
+| `Hours/Model/Blocker.swift` | Site blocking. Blocks while a session runs and the setting (UserDefaults `blockSites`, off by default) is on; follows session starts and stops by observing `store.running`. Quit unblocks (`applicationWillTerminate`); launch removes a stale block unless its session is still running. blocked.txt stays in `~/Library/Application Support/Hours/` (next to `HOURS_STORE` when set); only the app reads it. |
 | `Hours/Model/Clock.swift` | The minute tick. Lines up with the running session's start. Views read `clock.now`. |
 | `Shared/HoursMinutes.swift` | `hoursMinutes(_:)`, the `h:mm` format used by the bar and the dropdown. |
 | `Hours/Views/DropdownView.swift` | Stacks the three rows. |

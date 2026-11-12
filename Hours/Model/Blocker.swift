@@ -44,10 +44,14 @@ final class Blocker {
 
     // MARK: Locations
 
-    /// blocked.txt sits next to the store, so HOURS_STORE moves it too and test
-    /// runs never touch ~/Library/Application Support/Hours/.
+    /// blocked.txt sits next to HOURS_STORE when that is set, so test runs
+    /// never touch the real one. Otherwise it stays in
+    /// ~/Library/Application Support/Hours/: the store moved to the app group
+    /// container for the widget, but only the app reads this list.
     nonisolated static func defaultListURL(environment: [String: String] = ProcessInfo.processInfo.environment) -> URL {
-        Store.defaultURL(environment: environment).deletingLastPathComponent().appendingPathComponent("blocked.txt")
+        let hasStore = !(environment["HOURS_STORE"] ?? "").isEmpty
+        let store = hasStore ? Store.defaultURL(environment: environment) : Store.legacyURL()
+        return store.deletingLastPathComponent().appendingPathComponent("blocked.txt")
     }
 
     nonisolated static func defaultTarget(environment: [String: String] = ProcessInfo.processInfo.environment) -> Target {
